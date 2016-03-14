@@ -9,3 +9,10 @@ try:
     from .zeus_celery import Celery
 except:
     pass
+
+
+try:
+    import redis
+    from .zeus_session import RedisSessionInterface
+except:
+    pass
