@@ -16,3 +16,9 @@ try:
     from .zeus_session import RedisSessionInterface
 except:
     pass
+
+try:
+    import flask
+    from .zeus_decorators import jsonp
+except:
+    pass
