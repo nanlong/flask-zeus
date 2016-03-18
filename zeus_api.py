@@ -7,6 +7,22 @@ from flask.ext.login import current_user, login_required
 
 
 class ModelResource(Resource):
+    """
+    example:
+        from app.models import Post
+        from app.forms import PostCreateForm, PostUpdateForm
+        from app.output_fields import post_fields
+
+        @api.resource('/posts/', '/posts/<int:id>/')
+        class PostAPI(ModelResource):
+            model = Post
+            create_form = PostCreateForm
+            update_form = PostUpdateForm
+            output_fields = post_fields
+            allow_create = True
+            allow_update = True
+            allow_delete = True
+    """
     model = None
     create_form = None
     update_form = None
@@ -133,7 +149,7 @@ class ModelResource(Resource):
 
     @login_required
     def delete(self, **kwargs):
-        """ 资源删除, 管理员可操作
+        """ 资源删除
         :param kwargs:
         :return:
         """
@@ -144,16 +160,13 @@ class ModelResource(Resource):
 
         stmt = self.generate_stmt(**kwargs)
 
-        if not current_user.is_admin:
-            if not self.allow_delete or not self.model.has_property('user_id'):
-                return abort(405)
-            else:
-                item = stmt.first_or_404()
+        if not self.allow_delete or not self.model.has_property('user_id'):
+            return abort(405)
 
-                if item.user_id != current_user.id:
-                    abort(401)
-        else:
-            item = stmt.first_or_404()
+        item = stmt.first_or_404()
+
+        if item.user_id != current_user.id:
+            abort(401)
 
         item.delete()
         return {}, 204
