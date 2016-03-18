@@ -10,7 +10,6 @@ try:
 except:
     pass
 
-
 try:
     import redis
     from .zeus_session import RedisSessionInterface
@@ -20,5 +19,13 @@ except:
 try:
     import flask
     from .zeus_decorators import jsonp
+except:
+    pass
+
+try:
+    import flask
+    import flask_login
+    import flask_restful
+    from .zeus_api import ModelResource
 except:
     pass
