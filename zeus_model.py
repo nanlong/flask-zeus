@@ -47,8 +47,8 @@ class CRUDMixin(BaseMixin):
     """
 
     id = db.Column('id', db.INT, primary_key=True)
-    created_at = db.Column('created_at', db.DATETIME, default=datetime.datetime.now, index=True, nullable=False)
-    updated_at = db.Column('updated_at', db.DATETIME, default=datetime.datetime.now, index=True, nullable=False)
+    created_at = db.Column('created_at', db.TIMESTAMP, default=datetime.datetime.now, index=True, nullable=False)
+    updated_at = db.Column('updated_at', db.TIMESTAMP, default=datetime.datetime.now, index=True, nullable=False)
 
     __mapper_args__ = {
         'order_by': id.desc()

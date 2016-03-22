@@ -3,11 +3,14 @@ from __future__ import unicode_literals
 from __future__ import absolute_import
 from flask import request
 from flask.ext.restful import Resource, marshal, abort
-from flask.ext.login import current_user, login_required
+from .zeus_auth import multi_auth, api_current_user
 
 
 class ModelResource(Resource):
     """
+    默认 get 请求没有登录限制, 如需限制,  设置 method_decorators = [login_required]
+    默认 post put delete 请求带登录限制
+
     example:
         from app.models import Post
         from app.forms import PostCreateForm, PostUpdateForm
@@ -30,6 +33,7 @@ class ModelResource(Resource):
     allow_create = False
     allow_update = False
     allow_delete = False
+    auth = None
     page = 1
     per_page = 20
 
@@ -97,7 +101,7 @@ class ModelResource(Resource):
             }
         }
 
-    @login_required
+    @multi_auth.login_required
     def post(self, **kwargs):
         """ 资源创建
         :param kwargs:
@@ -114,13 +118,13 @@ class ModelResource(Resource):
 
         if form.validate_on_submit():
             item = self.model(**form.data)
-            item.user_id = current_user.id
+            item.user_id = api_current_user.id
             item.save()
             return marshal(item, self.output_fields), 201
 
         return form.errors, 400
 
-    @login_required
+    @multi_auth.login_required
     def put(self, **kwargs):
         """ 资源更新
         :param kwargs:
@@ -136,7 +140,7 @@ class ModelResource(Resource):
         stmt = self.generate_stmt(**kwargs)
         item = stmt.first_or_404()
 
-        if item.user_id != current_user.id:
+        if item.user_id != api_current_user.id:
             abort(401)
 
         form = self.update_form(csrf_enabled=False)
@@ -147,7 +151,7 @@ class ModelResource(Resource):
 
         return form.errors, 400
 
-    @login_required
+    @multi_auth.login_required
     def delete(self, **kwargs):
         """ 资源删除
         :param kwargs:
@@ -155,18 +159,18 @@ class ModelResource(Resource):
         """
         self.check_model()
 
-        if not kwargs:
-            abort(405)
-
-        stmt = self.generate_stmt(**kwargs)
-
-        if not self.allow_delete or not self.model.has_property('user_id'):
+        if not kwargs or not self.allow_delete or not self.model.has_property('user_id'):
             return abort(405)
 
+        stmt = self.generate_stmt(**kwargs)
         item = stmt.first_or_404()
 
-        if item.user_id != current_user.id:
+        if item.user_id != api_current_user.id:
             abort(401)
 
-        item.delete()
+        if self.model.has_property('deleted'):
+            item.update(deleted=True)
+        else:
+            item.delete()
+
         return {}, 204
