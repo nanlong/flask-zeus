@@ -11,11 +11,29 @@ example:
 from flask import g, request
 from werkzeug.local import LocalProxy
 from flask.ext.httpauth import HTTPBasicAuth, HTTPTokenAuth, MultiAuth
-from flask.ext.login import AnonymousUserMixin
 
 basic_auth = HTTPBasicAuth()
 token_auth = HTTPTokenAuth('Token')
 multi_auth = MultiAuth(basic_auth, token_auth)
+
+
+class AnonymousUserMixin(object):
+    """This is the default object for representing an anonymous user.
+    """
+    @property
+    def is_authenticated(self):
+        return False
+
+    @property
+    def is_active(self):
+        return False
+
+    @property
+    def is_anonymous(self):
+        return True
+
+    def get_id(self):
+        return
 
 
 @basic_auth.verify_password
