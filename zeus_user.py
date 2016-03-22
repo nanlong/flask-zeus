@@ -6,7 +6,14 @@ from .zeus_model import db
 
 
 class AccountMixin(object):
-
+    """ 账号字段, 默认有邮箱,密码哈希,token字段,
+        方法:
+            密码设置
+            密码验证
+            通过用户名和密码获取用户
+            通过token获取用户
+            设置token
+    """
     email = db.Column('email', db.VARCHAR(255), index=True, unique=True)
     password_hash = db.Column('password_hash', db.VARCHAR(512))
     token = db.Column('token', db.VARCHAR(512), index=True, unique=True)

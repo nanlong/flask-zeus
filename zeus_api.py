@@ -8,9 +8,6 @@ from .zeus_auth import multi_auth, api_current_user
 
 class ModelResource(Resource):
     """
-    默认 get 请求没有登录限制, 如需限制,  设置 method_decorators = [login_required]
-    默认 post put delete 请求带登录限制
-
     example:
         from app.models import Post
         from app.forms import PostCreateForm, PostUpdateForm
