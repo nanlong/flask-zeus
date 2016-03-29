@@ -3,11 +3,14 @@ from __future__ import unicode_literals
 from __future__ import absolute_import
 from flask import request
 from flask.ext.restful import Resource, marshal, abort
-from .zeus_auth import multi_auth, api_current_user
+from .auth import multi_auth, api_current_user
 
 
 class ModelResource(Resource):
     """
+    默认 get 请求没有登录限制, 如需限制,  设置 method_decorators = [login_required]
+    默认 post put delete 请求带登录限制
+
     example:
         from app.models import Post
         from app.forms import PostCreateForm, PostUpdateForm
@@ -119,7 +122,7 @@ class ModelResource(Resource):
             item.save()
             return marshal(item, self.output_fields), 201
 
-        return form.errors, 400
+        abort(400, data=form.errors)
 
     @multi_auth.login_required
     def put(self, **kwargs):
@@ -146,7 +149,7 @@ class ModelResource(Resource):
             item.update(**form.data)
             return marshal(item, self.output_fields), 200
 
-        return form.errors, 400
+        abort(400, data=form.errors)
 
     @multi_auth.login_required
     def delete(self, **kwargs):
@@ -170,4 +173,4 @@ class ModelResource(Resource):
         else:
             item.delete()
 
-        return {}, 204
+        abort(204)

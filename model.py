@@ -21,12 +21,14 @@ class BaseMixin(object):
     def as_dict(self, include=None, exclude=None):
         """ method for building dictionary for model value-properties filled
             with data from mapped storage backend
+        :param include:
+        :param exclude:
+        :return:
         """
         fields = [field.strip('_') for field in self.column_properties()]
 
         exportable_fields = (include or []) + fields
         exportable_fields = set(exportable_fields) - set(exclude or [])
-        # convert undescored fields:
 
         result = dict()
         for field in exportable_fields:

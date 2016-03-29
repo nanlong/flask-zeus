@@ -1,19 +1,14 @@
 # encoding:utf-8
 from __future__ import unicode_literals
 from __future__ import absolute_import
+from flask import current_app
+from itsdangerous import URLSafeSerializer as Serializer
 from werkzeug.security import generate_password_hash, check_password_hash
-from .zeus_model import db
+from .model import db
 
 
 class AccountMixin(object):
-    """ 账号字段, 默认有邮箱,密码哈希,token字段,
-        方法:
-            密码设置
-            密码验证
-            通过用户名和密码获取用户
-            通过token获取用户
-            设置token
-    """
+
     email = db.Column('email', db.VARCHAR(255), index=True, unique=True)
     password_hash = db.Column('password_hash', db.VARCHAR(512))
     token = db.Column('token', db.VARCHAR(512), index=True, unique=True)
@@ -30,18 +25,16 @@ class AccountMixin(object):
         return check_password_hash(self.password_hash, password)
 
     @classmethod
-    def get_by_token(cls, token):
+    def get_by_token(cls, token, _=None):
         return cls.query.filter_by(token=token).first()
 
     @classmethod
-    def get_by_login(cls, username, password):
+    def get_by_account(cls, username, password):
         user = cls.query.filter_by(email=username).first()
         if user and user.verify_password(password):
             return user
 
     def set_token(self):
-        from itsdangerous import URLSafeSerializer as Serializer
-        from flask import current_app
         serializer = Serializer(current_app.config.get('SECRET_KEY'))
         data = {'email': self.email, 'password': self.password_hash}
         self.token = serializer.dumps(data)

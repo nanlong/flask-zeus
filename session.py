@@ -12,8 +12,8 @@ from flask.sessions import SessionInterface, SessionMixin
 class RedisSession(CallbackDict, SessionMixin):
 
     def __init__(self, initial=None, sid=None, new=False):
-        def on_update(self):
-            self.modified = True
+        def on_update(instance):
+            instance.modified = True
         CallbackDict.__init__(self, initial, on_update)
         self.sid = sid
         self.new = new
@@ -30,10 +30,12 @@ class RedisSessionInterface(SessionInterface):
         self.redis = redis
         self.prefix = prefix
 
-    def generate_sid(self):
+    @staticmethod
+    def generate_sid():
         return str(uuid4())
 
-    def get_redis_expiration_time(self, app, session):
+    @staticmethod
+    def get_redis_expiration_time(app, session):
         if session.permanent:
             return app.permanent_session_lifetime
         return timedelta(days=1)
@@ -54,14 +56,10 @@ class RedisSessionInterface(SessionInterface):
         if not session:
             self.redis.delete(self.prefix + session.sid)
             if session.modified:
-                response.delete_cookie(app.session_cookie_name,
-                                       domain=domain)
+                response.delete_cookie(app.session_cookie_name, domain=domain)
             return
         redis_exp = self.get_redis_expiration_time(app, session)
         cookie_exp = self.get_expiration_time(app, session)
         val = self.serializer.dumps(dict(session))
-        self.redis.setex(self.prefix + session.sid, val,
-                         int(redis_exp.total_seconds()))
-        response.set_cookie(app.session_cookie_name, session.sid,
-                            expires=cookie_exp, httponly=True,
-                            domain=domain)
+        self.redis.setex(self.prefix + session.sid, val, int(redis_exp.total_seconds()))
+        response.set_cookie(app.session_cookie_name, session.sid, expires=cookie_exp, httponly=True, domain=domain)
