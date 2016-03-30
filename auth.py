@@ -10,8 +10,8 @@ example:
 """
 from flask import g, request
 from werkzeug.local import LocalProxy
-from flask.ext.httpauth import HTTPBasicAuth, HTTPTokenAuth, MultiAuth
-from flask.ext.login import AnonymousUserMixin
+from flask_httpauth import HTTPBasicAuth, HTTPTokenAuth, MultiAuth
+from flask_login import AnonymousUserMixin
 
 basic_auth = HTTPBasicAuth()
 token_auth = HTTPTokenAuth('Token')

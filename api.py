@@ -2,7 +2,7 @@
 from __future__ import unicode_literals
 from __future__ import absolute_import
 from flask import request, url_for
-from flask.ext.restful import Resource, marshal, abort
+from flask_restful import Resource, marshal, abort
 from .auth import multi_auth, api_current_user
 from .error import ZeusBadRequest, ZeusUnauthorized, ZeusNotFound, ZeusMethodNotAllowed
 
