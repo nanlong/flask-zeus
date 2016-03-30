@@ -1,7 +1,7 @@
 # encoding:utf-8
 from __future__ import unicode_literals
 from __future__ import absolute_import
-from flask import request
+from flask import request, url_for
 from flask.ext.restful import Resource, marshal, abort
 from .auth import multi_auth, api_current_user
 from .error import ZeusBadRequest, ZeusUnauthorized, ZeusNotFound, ZeusMethodNotAllowed
@@ -9,9 +9,6 @@ from .error import ZeusBadRequest, ZeusUnauthorized, ZeusNotFound, ZeusMethodNot
 
 class ModelResource(Resource):
     """
-    默认 get 请求没有登录限制, 如需限制,  设置 method_decorators = [login_required]
-    默认 post put delete 请求带登录限制
-
     example:
         from app.models import Post
         from app.forms import PostCreateForm, PostUpdateForm
@@ -27,16 +24,35 @@ class ModelResource(Resource):
             allow_update = True
             allow_delete = True
     """
+    # 模型
     model = None
+
+    # 创建数据使用的表单
     create_form = None
+
+    # 更新数据使用的表单
     update_form = None
+
+    # 输出格式定义
     output_fields = None
+
+    # 是否允许创建
     allow_create = False
+
+    # 是否允许更新
     allow_update = False
+
+    # 是否允许删除
     allow_delete = False
-    auth = None
+
+    # 页码
     page = 1
+
+    # 每页数据个数
     per_page = 20
+
+    # 是否生成包含域名的完整url
+    is_full_url = False
 
     @property
     def cls_name(self):
@@ -69,6 +85,31 @@ class ModelResource(Resource):
         stmt = stmt.filter_by(**filter_by)
         return stmt
 
+    def generate_iter_pages(self, pages, per_page):
+        """ 生成分页
+        :param pages:
+        :param per_page:
+        :return:
+        """
+        pages = list(pages)
+        iter_pages = []
+
+        for page in pages:
+            iter_pages.append({
+                'page': page if isinstance(page, int) else '...',
+                'url': self.generate_url(page, per_page) if isinstance(page, int) else ''
+            })
+
+        return iter_pages
+
+    def generate_url(self, page, per_page):
+        """ 生成链接
+        :param page:
+        :param per_page:
+        :return:
+        """
+        return url_for(request.endpoint, page=page, per_page=per_page, _external=self.is_full_url)
+
     def get(self, **kwargs):
         """ 资源获取
         :param kwargs:
@@ -100,7 +141,9 @@ class ModelResource(Resource):
                 'total': pagination.total,
                 'next_num': pagination.next_num,
                 'prev_num': pagination.prev_num,
-                'iter_pages': list(pagination.iter_pages())
+                'next_url': self.generate_url(pagination.next_num, per_page) if pagination.has_next else '',
+                'prev_url': self.generate_url(pagination.prev_num, per_page) if pagination.has_prev else '',
+                'iter_pages': self.generate_iter_pages(pagination.iter_pages(), per_page)
             }
         }
 
