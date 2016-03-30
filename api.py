@@ -190,7 +190,10 @@ class ModelResource(Resource):
             raise ZeusMethodNotAllowed
 
         stmt = self.generate_stmt(**kwargs)
-        item = stmt.first_or_404()
+        item = stmt.first()
+
+        if not item:
+            raise ZeusNotFound
 
         if item.user_id != api_current_user.id:
             raise ZeusUnauthorized
@@ -228,4 +231,4 @@ class ModelResource(Resource):
         else:
             item.delete()
 
-        abort(204)
+        return {}, 204
