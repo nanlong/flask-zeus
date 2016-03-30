@@ -95,10 +95,16 @@ class ModelResource(Resource):
         iter_pages = []
 
         for page in pages:
-            iter_pages.append({
-                'page': page if isinstance(page, int) else '...',
-                'url': self.generate_url(page, per_page) if isinstance(page, int) else ''
-            })
+            if isinstance(page, int):
+                iter_pages.append({
+                    'page': page,
+                    'url': self.generate_url(page, per_page)
+                })
+            else:
+                iter_pages.append({
+                    'page': '...',
+                    'url': ''
+                })
 
         return iter_pages
 
