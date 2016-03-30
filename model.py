@@ -16,14 +16,13 @@ class BaseMixin(object):
 
     @classmethod
     def column_properties(cls):
-        return [p.key for p in cls.__mapper__.iterate_properties
-                if isinstance(p, orm.ColumnProperty)]
+        mapper = getattr(cls, '__mapper__')
+        return [p.key for p in mapper.iterate_properties if isinstance(p, orm.ColumnProperty)]
 
     def as_dict(self, include=None, exclude=None):
-        """ method for building dictionary for model value-properties filled
-            with data from mapped storage backend
-        :param include:
-        :param exclude:
+        """
+        :param include: 需要显示的属性列表
+        :param exclude: 需要排除的属性列表
         :return:
         """
         fields = [field.strip('_') for field in self.column_properties()]
@@ -89,7 +88,7 @@ class CRUDMixin(BaseMixin):
     def _setattrs(self, **kwargs):
         for k, v in kwargs.iteritems():
             if k.startswith('_'):
-                raise ValueError('Underscored values are not allowed')
+                raise ValueError('私有属性不允许被设置')
             setattr(self, k, v)
         return self
 
