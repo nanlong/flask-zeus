@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 from __future__ import absolute_import
 from flask import request, url_for
 from flask_restful import Resource, marshal
+from collections import OrderedDict
 from .auth import multi_auth, api_current_user
 from .error import ZeusBadRequest, ZeusUnauthorized, ZeusNotFound, ZeusMethodNotAllowed
 
@@ -181,18 +182,18 @@ class ModelResource(Resource):
 
         return {
             'items': marshal(pagination.items, self.output_fields),
-            'pagination': {
-                'has_next': pagination.has_next,
-                'has_prev': pagination.has_prev,
-                'page': pagination.page,
-                'pages': pagination.pages,
-                'total': pagination.total,
-                'next_num': pagination.next_num,
-                'prev_num': pagination.prev_num,
-                'next_url': self.generate_url(pagination.next_num, per_page) if pagination.has_next else '',
-                'prev_url': self.generate_url(pagination.prev_num, per_page) if pagination.has_prev else '',
-                'iter_pages': self.generate_iter_pages(pagination.iter_pages(), per_page)
-            }
+            'pagination': OrderedDict([
+                ('has_prev', pagination.has_next),
+                ('has_next', pagination.has_next),
+                ('prev_num', pagination.prev_num),
+                ('next_num', pagination.next_num),
+                ('prev_url', self.generate_url(pagination.prev_num, per_page) if pagination.has_prev else ''),
+                ('next_url', self.generate_url(pagination.next_num, per_page) if pagination.has_next else ''),
+                ('page', pagination.page),
+                ('pages', pagination.pages),
+                ('total', pagination.total),
+                ('iter_pages', self.generate_iter_pages(pagination.iter_pages(), per_page)),
+            ])
         }
 
     @multi_auth.login_required
