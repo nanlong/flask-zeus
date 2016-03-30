@@ -16,8 +16,13 @@ class BaseMixin(object):
 
     @classmethod
     def column_properties(cls):
+        properties = []
         mapper = getattr(cls, '__mapper__')
-        return [p.key for p in mapper.iterate_properties if isinstance(p, orm.ColumnProperty)]
+
+        if mapper and hasattr(mapper, 'iterate_properties'):
+            properties = [p.key for p in mapper.iterate_properties if isinstance(p, orm.ColumnProperty)]
+
+        return properties
 
     def as_dict(self, include=None, exclude=None):
         """
@@ -72,23 +77,34 @@ class CRUDMixin(BaseMixin):
         return cls(**kwargs).save(commit)
 
     def update(self, commit=True, **kwargs):
-        return self._setattrs(**kwargs).save(commit)
+        return self._set_attributes(**kwargs).save(commit)
 
     def save(self, commit=True):
         db.session.add(self)
+
         if commit:
             db.session.commit()
+
         return self
 
     def delete(self, commit=True):
-        db.session.delete(self)
+        if self.has_property('deleted'):
+            setattr(self, 'deleted', True)
+            db.session.add(self)
+        else:
+            db.session.delete(self)
+
         if commit:
             db.session.commit()
 
-    def _setattrs(self, **kwargs):
+    def _set_attributes(self, **kwargs):
         for k, v in kwargs.iteritems():
+
             if k.startswith('_'):
                 raise ValueError('私有属性不允许被设置')
-            setattr(self, k, v)
+
+            if self.has_property(k):
+                setattr(self, k, v)
+
         return self
 
