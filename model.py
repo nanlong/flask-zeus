@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 from __future__ import absolute_import
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import orm
+from sqlalchemy.ext.declarative import declared_attr
 import datetime
 
 db = SQLAlchemy()
@@ -47,14 +48,21 @@ class BaseMixin(object):
 class CRUDMixin(BaseMixin):
     """ Basic CRUD mixin
     """
-
-    id = db.Column('id', db.INT, primary_key=True)
-    created_at = db.Column('created_at', db.TIMESTAMP, default=datetime.datetime.now, index=True, nullable=False)
-    updated_at = db.Column('updated_at', db.TIMESTAMP, default=datetime.datetime.now, index=True, nullable=False)
-
     __mapper_args__ = {
-        'order_by': id.desc()
+        'order_by': 'id desc'
     }
+
+    @declared_attr
+    def id(self):
+        return db.Column('id', db.INT, primary_key=True)
+
+    @declared_attr
+    def created_at(self):
+        return db.Column('created_at', db.TIMESTAMP, default=datetime.datetime.now, index=True, nullable=False)
+
+    @declared_attr
+    def updated_at(self):
+        return db.Column('updated_at', db.TIMESTAMP, default=datetime.datetime.now, index=True, nullable=False)
 
     @classmethod
     def get(cls, row_id):

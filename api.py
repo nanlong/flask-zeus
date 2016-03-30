@@ -2,7 +2,7 @@
 from __future__ import unicode_literals
 from __future__ import absolute_import
 from flask import request, url_for
-from flask_restful import Resource, marshal, abort
+from flask_restful import Resource, marshal
 from .auth import multi_auth, api_current_user
 from .error import ZeusBadRequest, ZeusUnauthorized, ZeusNotFound, ZeusMethodNotAllowed
 
@@ -54,6 +54,8 @@ class ModelResource(Resource):
     # 是否生成包含域名的完整url
     is_full_url = False
 
+    order_by = None
+
     @property
     def cls_name(self):
         return self.__class__.__name__
@@ -70,11 +72,21 @@ class ModelResource(Resource):
     def check_output_fields(self):
         assert self.output_fields, 'API Class: {} output_fields not set'.format(self.cls_name)
 
+    @property
+    def stmt(self):
+        """ 自定义stmt语句, 需重写, 提供给get方法使用
+        :return: sqlalchemy query
+        """
+        return None
+
     def generate_stmt(self, **kwargs):
         """ 生成查询语句
         :param kwargs:
-        :return:
+        :return: sqlalchemy query
         """
+        if self.stmt:
+            return self.stmt
+
         stmt = self.model.query
 
         filter_by = {}
@@ -83,13 +95,17 @@ class ModelResource(Resource):
                 filter_by[k] = v
 
         stmt = stmt.filter_by(**filter_by)
+
+        if self.order_by and isinstance(self.order_by, (list, tuple, set)):
+            stmt = stmt.order_by(*self.order_by)
+
         return stmt
 
     def generate_iter_pages(self, pages, per_page):
         """ 生成分页
         :param pages:
         :param per_page:
-        :return:
+        :return: list
         """
         pages = list(pages)
         iter_pages = []
@@ -112,14 +128,14 @@ class ModelResource(Resource):
         """ 生成链接
         :param page:
         :param per_page:
-        :return:
+        :return: str
         """
         return url_for(request.endpoint, page=page, per_page=per_page, _external=self.is_full_url)
 
     def get(self, **kwargs):
         """ 资源获取
         :param kwargs:
-        :return:
+        :return: dict
         """
         self.check_model()
         self.check_output_fields()
@@ -132,7 +148,6 @@ class ModelResource(Resource):
                 raise ZeusNotFound
             return marshal(item, self.output_fields)
 
-        stmt = stmt.order_by(self.model.id.desc())
         page = request.args.get('page', self.page, int)
         per_page = request.args.get('per_page', self.per_page, int)
         pagination = stmt.paginate(page, per_page, error_out=False)
@@ -157,7 +172,7 @@ class ModelResource(Resource):
     def post(self, **kwargs):
         """ 资源创建
         :param kwargs:
-        :return:
+        :return: dict
         """
         self.check_model()
         self.check_create_form()
@@ -180,7 +195,7 @@ class ModelResource(Resource):
     def put(self, **kwargs):
         """ 资源更新
         :param kwargs:
-        :return:
+        :return: dict
         """
         self.check_model()
         self.check_update_form()
@@ -210,7 +225,7 @@ class ModelResource(Resource):
     def delete(self, **kwargs):
         """ 资源删除
         :param kwargs:
-        :return:
+        :return: None
         """
         self.check_model()
 
