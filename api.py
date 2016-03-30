@@ -53,13 +53,17 @@ class ModelResource(Resource):
     # type: bool
     allow_delete = False
 
+    # 是否允许返回空数据
+    # type: bool
+    allow_empty = True
+
     # 页码
     # type: int
-    page = 1
+    default_page = 1
 
     # 每页数据个数
     # type: int
-    per_page = 20
+    default_per_page = 20
 
     # 是否生成包含域名的完整url
     # type: bool
@@ -176,9 +180,9 @@ class ModelResource(Resource):
                 raise ZeusNotFound
             return marshal(item, self.output_fields)
 
-        page = request.args.get('page', self.page, int)
-        per_page = request.args.get('per_page', self.per_page, int)
-        pagination = stmt.paginate(page, per_page, error_out=False)
+        page = request.args.get('page', self.default_page, int) or self.default_page
+        per_page = request.args.get('per_page', self.default_per_page, int) or self.default_per_page
+        pagination = stmt.paginate(page, per_page, error_out=not self.allow_empty)
 
         return {
             'items': marshal(pagination.items, self.output_fields),
