@@ -4,6 +4,7 @@ from __future__ import absolute_import
 from flask import request
 from flask.ext.restful import Resource, marshal, abort
 from .auth import multi_auth, api_current_user
+from .error import ZeusBadRequest, ZeusUnauthorized, ZeusNotFound, ZeusMethodNotAllowed
 
 
 class ModelResource(Resource):
@@ -79,7 +80,9 @@ class ModelResource(Resource):
         stmt = self.generate_stmt(**kwargs)
 
         if kwargs.get('id'):
-            item = stmt.first_or_404()
+            item = stmt.first()
+            if not item:
+                raise ZeusNotFound
             return marshal(item, self.output_fields)
 
         stmt = stmt.order_by(self.model.id.desc())
@@ -112,7 +115,7 @@ class ModelResource(Resource):
         self.check_output_fields()
 
         if kwargs or not self.allow_create or not self.model.has_property('user_id'):
-            abort(405)
+            raise ZeusMethodNotAllowed
 
         form = self.create_form(csrf_enabled=False)
 
@@ -122,7 +125,7 @@ class ModelResource(Resource):
             item.save()
             return marshal(item, self.output_fields), 201
 
-        abort(400, data=form.errors)
+        raise ZeusBadRequest(details=form.errors)
 
     @multi_auth.login_required
     def put(self, **kwargs):
@@ -135,13 +138,13 @@ class ModelResource(Resource):
         self.check_output_fields()
 
         if not kwargs or not self.allow_update or not self.model.has_property('user_id'):
-            abort(405)
+            raise ZeusMethodNotAllowed
 
         stmt = self.generate_stmt(**kwargs)
         item = stmt.first_or_404()
 
         if item.user_id != api_current_user.id:
-            abort(401)
+            raise ZeusUnauthorized
 
         form = self.update_form(csrf_enabled=False)
 
@@ -149,7 +152,7 @@ class ModelResource(Resource):
             item.update(**form.data)
             return marshal(item, self.output_fields), 200
 
-        abort(400, data=form.errors)
+        raise ZeusBadRequest(details=form.errors)
 
     @multi_auth.login_required
     def delete(self, **kwargs):
@@ -160,13 +163,16 @@ class ModelResource(Resource):
         self.check_model()
 
         if not kwargs or not self.allow_delete or not self.model.has_property('user_id'):
-            return abort(405)
+            raise ZeusMethodNotAllowed
 
         stmt = self.generate_stmt(**kwargs)
-        item = stmt.first_or_404()
+        item = stmt.first()
+
+        if not item:
+            raise ZeusNotFound
 
         if item.user_id != api_current_user.id:
-            abort(401)
+            raise ZeusUnauthorized
 
         if self.model.has_property('deleted'):
             item.update(deleted=True)
