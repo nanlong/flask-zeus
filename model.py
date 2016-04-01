@@ -4,6 +4,7 @@ from __future__ import absolute_import
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import orm
 from sqlalchemy.ext.declarative import declared_attr
+from sqlalchemy import text
 import datetime
 
 db = SQLAlchemy()
@@ -53,7 +54,7 @@ class CRUDMixin(BaseMixin):
     """ Basic CRUD mixin
     """
     __mapper_args__ = {
-        'order_by': 'id desc'
+        'order_by': text('id desc')
     }
 
     @declared_attr

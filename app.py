@@ -4,9 +4,13 @@ from __future__ import absolute_import
 from flask import Flask
 
 
-def create_app(config, config_name, ext_list, bp_list):
-    app = Flask(__name__)
-    app.config.from_object(config[config_name])
+def create_app(config, config_name='default', ext_list=None, bp_list=None, **kwargs):
+    app = Flask(__name__, **kwargs)
+    app_config = config.get(config_name)
+    app.config.from_object(app_config)
+
+    if hasattr(app_config, 'init_app'):
+        app_config.init_app(app)
 
     if ext_list and isinstance(ext_list, (list, tuple, set)):
         for ext in ext_list:
