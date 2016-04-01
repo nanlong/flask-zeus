@@ -12,15 +12,15 @@ class AccountMixin(object):
 
     @declared_attr
     def email(self):
-        return db.Column('email', db.VARCHAR(255), index=True, unique=True)
+        return db.Column('email', db.VARCHAR(255), index=True, unique=True, doc='用户邮箱,用来做登陆帐号')
 
     @declared_attr
     def password_hash(self):
-        return db.Column('password_hash', db.VARCHAR(512))
+        return db.Column('password_hash', db.VARCHAR(512), doc='用户密码的hash值')
 
     @declared_attr
     def token(self):
-        return db.Column('token', db.VARCHAR(512), index=True, unique=True)
+        return db.Column('token', db.VARCHAR(512), index=True, unique=True, doc='用户token,通过邮箱和密码生成,唯一')
 
     @property
     def password(self):

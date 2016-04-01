@@ -1,11 +1,16 @@
 # encoding:utf-8
+"""
+1. 尽量避免使用外键关联
+2. 定义字段的时候请完善doc参数
+    id = db.Column('id', db.INT, primary_key=True, doc='主键ID')
+"""
 from __future__ import unicode_literals
 from __future__ import absolute_import
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import orm
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy import text
-import datetime
+from datetime import datetime
 
 db = SQLAlchemy()
 
@@ -59,15 +64,15 @@ class CRUDMixin(BaseMixin):
 
     @declared_attr
     def id(self):
-        return db.Column('id', db.INT, primary_key=True)
+        return db.Column('id', db.INT, primary_key=True, doc='主键ID')
 
     @declared_attr
     def created_at(self):
-        return db.Column('created_at', db.TIMESTAMP, default=datetime.datetime.now, index=True, nullable=False)
+        return db.Column('created_at', db.TIMESTAMP, default=datetime.now, index=True, nullable=False, doc='创建时间')
 
     @declared_attr
     def updated_at(self):
-        return db.Column('updated_at', db.TIMESTAMP, default=datetime.datetime.now, index=True, nullable=False)
+        return db.Column('updated_at', db.TIMESTAMP, default=datetime.now, index=True, nullable=False, doc='更新时间')
 
     @classmethod
     def get(cls, row_id):
