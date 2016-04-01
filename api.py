@@ -116,18 +116,34 @@ class ModelResource(Resource):
         :param kwargs:
         :return: sqlalchemy query
         """
+        # 如有自定义语句,直接返回
         if self.stmt:
             return self.stmt
 
         stmt = self.model.query
 
-        filter_by = {}
+        # 处理url主体,?之前
+        filter_by_ = {}
         for k, v in kwargs.iteritems():
             if self.model.has_property(k):
-                filter_by[k] = v
+                filter_by_[k] = v
 
-        stmt = stmt.filter_by(**filter_by)
+        stmt = stmt.filter_by(**filter_by_)
 
+        # 处理url参数?之后
+        # 默认参数为多值,使用in操作符
+        # 如果参数为单值,并且开头或结尾为%,使用like操作符
+        filter_ = []
+        for k, v in request.args.lists():
+            if self.model.has_property(k):
+                if len(v) == 1 and (v[0].startswith('%') or v[0].endswith('%')):
+                    filter_.append(getattr(self.model, k).ilike(v[0]))
+                else:
+                    filter_.append(getattr(self.model, k).in_(v))
+
+        stmt = stmt.filter(*filter_)
+
+        # 处理自定义排序
         if self.order_by and isinstance(self.order_by, (list, tuple, set)):
             stmt = stmt.order_by(*self.order_by)
 
