@@ -41,7 +41,7 @@ def verify_token(token):
 def get_current_user():
     current_user = getattr(g, 'current_user', None)
 
-    if not current_user:
+    if not current_user and request.authorization:
         username = request.authorization.get('username')
         password = request.authorization.get('password')
         get_user_method = [g.User.get_by_token, g.User.get_by_account][password]

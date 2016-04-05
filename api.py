@@ -124,7 +124,7 @@ class ModelResource(Resource):
 
         # 处理url主体,?之前
         filter_by_ = {}
-        
+
         for k, v in kwargs.iteritems():
             if self.model.has_property(k):
                 filter_by_[k] = v
