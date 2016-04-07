@@ -6,7 +6,6 @@ from flask import request, current_app
 
 
 def jsonp(f):
-    """Wraps JSONified output for JSONP requests."""
     @wraps(f)
     def decorated_function(*args, **kwargs):
         callback = request.args.get('callback', False)
