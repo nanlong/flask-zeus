@@ -1,10 +1,12 @@
 # encoding:utf-8
-from __future__ import unicode_literals
 from __future__ import absolute_import
+from __future__ import unicode_literals
+
 from flask import current_app
 from itsdangerous import URLSafeSerializer as Serializer
 from werkzeug.security import generate_password_hash, check_password_hash
-from .model import db
+
+from flask.ext.zeus.model import db
 
 
 class AccountMixin(object):
