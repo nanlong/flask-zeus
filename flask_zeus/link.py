@@ -4,7 +4,7 @@ from __future__ import absolute_import
 """
 Example:
 link = Link('/post', '/post', '发帖', method='POST', data=(
-    LinkData(name='content', data_type='string', required=True),
+    LinkData(name='content', data_type='string', required=True, validator=r'\S{1,140}'),
     LinkData(name='photos', data_type='array[object][1,9]', data=(
         LinkData(name='width', data_type='integer'),
         LinkData(name='height', data_type='integer'),
@@ -19,7 +19,8 @@ Print:
         {
             "required": true,
             "name": "content",
-            "data_type": "string"
+            "data_type": "string",
+            "validator": "\\S{1,140}"
         },
         {
             "required": false,
