@@ -5,17 +5,10 @@ from __future__ import absolute_import
 Example:
 link = Link('/post', '/post', '发帖', method='POST', data=(
     LinkData(name='content', data_type='string', required=True),
-    LinkData(name='photos', data_type='array', required=True, data=(
-        LinkData(name='photo', data_type='object', data=(
-            LinkData(name='width', data_type='integer'),
-            LinkData(name='height', data_type='integer'),
-            LinkData(name='src', data_type='string', required=True),
-        )),
-    )),
-    LinkData(name='photo', data_type='object', data=(
+    LinkData(name='photos', data_type='array[object][1,9]', data=(
         LinkData(name='width', data_type='integer'),
         LinkData(name='height', data_type='integer'),
-        LinkData(name='src', data_type='string'),
+        LinkData(name='src', data_type='string', required=True),
     )),
 ))
 
@@ -27,35 +20,6 @@ Print:
             "required": true,
             "name": "content",
             "data_type": "string"
-        },
-        {
-            "required": true,
-            "data": [
-                {
-                    "required": false,
-                    "data": [
-                        {
-                            "required": false,
-                            "name": "width",
-                            "data_type": "integer"
-                        },
-                        {
-                            "required": false,
-                            "name": "height",
-                            "data_type": "integer"
-                        },
-                        {
-                            "required": true,
-                            "name": "src",
-                            "data_type": "string"
-                        }
-                    ],
-                    "name": "photo",
-                    "data_type": "object"
-                }
-            ],
-            "name": "photos",
-            "data_type": "array"
         },
         {
             "required": false,
@@ -71,13 +35,13 @@ Print:
                     "data_type": "integer"
                 },
                 {
-                    "required": false,
+                    "required": true,
                     "name": "src",
                     "data_type": "string"
                 }
             ],
-            "name": "photo",
-            "data_type": "object"
+            "name": "photos",
+            "data_type": "array[object][1,9]"
         }
     ],
     "name": "发帖",
@@ -128,6 +92,10 @@ class LinkData(dict):
         """
         :param name: (必填) 字段名称
         :param data_type: (必填) 字段类型 [integer, float, string, boolean, array, object]
+            array[type][length range]
+            example:
+                array[string][0,3]
+                array[object][1,9]
         :param label: (可选) 字段标签
         :param description: (可选) 字段描述
         :param default: (可选) 默认值
@@ -137,6 +105,7 @@ class LinkData(dict):
         :return: dict
         """
         kwargs = dict()
+
         kwargs['name'] = name
         kwargs['data_type'] = data_type
 
@@ -149,7 +118,7 @@ class LinkData(dict):
         if isinstance(description, (str, unicode)):
             kwargs['description'] = description
 
-        if isinstance(default, self.DATA_TYPE.get(data_type, [])):
+        if isinstance(default, self.DATA_TYPE.get(data_type, tuple())):
             kwargs['default'] = default
 
         if isinstance(validator, (str, unicode)):
@@ -162,3 +131,4 @@ class LinkData(dict):
             kwargs['data'] = data
 
         super(LinkData, self).__init__(**kwargs)
+
