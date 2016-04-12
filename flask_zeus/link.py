@@ -2,14 +2,90 @@
 from __future__ import unicode_literals
 from __future__ import absolute_import
 """
-link = Link('/a', '/a', 'hehe', method='POST', data=(
-    LinkData(name='123', data_type='string'),
-    LinkData(name='123', data_type='integer'),
-    LinkData(name='123', data_type='float'),
-    LinkData(name='123', data_type='array'),
-    LinkData(name='123', data_type='object'),
+Example:
+link = Link('/post', '/post', '发帖', method='POST', data=(
+    LinkData(name='content', data_type='string', required=True),
+    LinkData(name='photos', data_type='array', required=True, data=(
+        LinkData(name='photo', data_type='object', data=(
+            LinkData(name='width', data_type='integer'),
+            LinkData(name='height', data_type='integer'),
+            LinkData(name='src', data_type='string', required=True),
+        )),
+    )),
+    LinkData(name='photo', data_type='object', data=(
+        LinkData(name='width', data_type='integer'),
+        LinkData(name='height', data_type='integer'),
+        LinkData(name='src', data_type='string'),
+    )),
 ))
+
+Print:
+{
+    "href": "/post",
+    "data": [
+        {
+            "required": true,
+            "name": "content",
+            "data_type": "string"
+        },
+        {
+            "required": true,
+            "data": [
+                {
+                    "required": false,
+                    "data": [
+                        {
+                            "required": false,
+                            "name": "width",
+                            "data_type": "integer"
+                        },
+                        {
+                            "required": false,
+                            "name": "height",
+                            "data_type": "integer"
+                        },
+                        {
+                            "required": true,
+                            "name": "src",
+                            "data_type": "string"
+                        }
+                    ],
+                    "name": "photo",
+                    "data_type": "object"
+                }
+            ],
+            "name": "photos",
+            "data_type": "array"
+        },
+        {
+            "required": false,
+            "data": [
+                {
+                    "required": false,
+                    "name": "width",
+                    "data_type": "integer"
+                },
+                {
+                    "required": false,
+                    "name": "height",
+                    "data_type": "integer"
+                },
+                {
+                    "required": false,
+                    "name": "src",
+                    "data_type": "string"
+                }
+            ],
+            "name": "photo",
+            "data_type": "object"
+        }
+    ],
+    "name": "发帖",
+    "rel": "/post",
+    "method": "POST"
+}
 """
+
 
 class Link(dict):
 
@@ -48,7 +124,7 @@ class LinkData(dict):
         'object': (dict,),
     }
 
-    def __init__(self, name, data_type, label=None, description=None, default=None, validator=None, options=None, data=None):
+    def __init__(self, name, data_type, required=False, label=None, description=None, default=None, validator=None, options=None, data=None):
         """
         :param name: (必填) 字段名称
         :param data_type: (必填) 字段类型 [integer, float, string, boolean, array, object]
@@ -63,6 +139,9 @@ class LinkData(dict):
         kwargs = dict()
         kwargs['name'] = name
         kwargs['data_type'] = data_type
+
+        if isinstance(required, bool):
+            kwargs['required'] = required
 
         if isinstance(label, (str, unicode)):
             kwargs['label'] = label
@@ -83,4 +162,3 @@ class LinkData(dict):
             kwargs['data'] = data
 
         super(LinkData, self).__init__(**kwargs)
-
