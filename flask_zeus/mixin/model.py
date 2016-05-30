@@ -8,9 +8,12 @@ from __future__ import unicode_literals
 from __future__ import absolute_import
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import orm
+from sqlalchemy.ext.associationproxy import AssociationProxy
 from sqlalchemy.ext.declarative import declared_attr
-from sqlalchemy import text
 from datetime import datetime
+from sqlalchemy import text
+from sqlalchemy.dialects.postgres import UUID
+
 
 db = SQLAlchemy()
 
@@ -26,7 +29,7 @@ class BaseMixin(object):
         mapper = getattr(cls, '__mapper__')
 
         if mapper and hasattr(mapper, 'iterate_properties'):
-            properties = [p.key for p in mapper.iterate_properties if isinstance(p, orm.ColumnProperty)]
+            properties = [p.key for p in mapper.iterate_properties if isinstance(p, (orm.ColumnProperty,))]
 
         return properties
 
@@ -58,13 +61,10 @@ class BaseMixin(object):
 class CRUDMixin(BaseMixin):
     """ Basic CRUD mixin
     """
-    __mapper_args__ = {
-        'order_by': text('id desc')
-    }
 
     @declared_attr
     def id(self):
-        return db.Column('id', db.INT, primary_key=True, doc='主键ID')
+        return db.Column('id', UUID(as_uuid=True), server_default=text('uuid_generate_v4()'), primary_key=True, doc='主键')
 
     @declared_attr
     def created_at(self):
@@ -74,16 +74,18 @@ class CRUDMixin(BaseMixin):
     def updated_at(self):
         return db.Column('updated_at', db.TIMESTAMP, default=datetime.now, index=True, nullable=False, doc='更新时间')
 
+    @declared_attr
+    def deleted(self):
+        return db.Column('deleted', db.Boolean, default=False, index=True, doc='是否删除')
+
     @classmethod
     def get(cls, row_id):
-        return cls.query.get(row_id)
+        query = getattr(cls, 'query')
+        return query.get(row_id)
 
     @classmethod
     def create(cls, commit=True, **kwargs):
         return cls(**kwargs).save(commit)
-
-    def update(self, commit=True, **kwargs):
-        return self._set_attributes(**kwargs).save(commit)
 
     def save(self, commit=True):
         db.session.add(self)
@@ -103,8 +105,11 @@ class CRUDMixin(BaseMixin):
         if commit:
             db.session.commit()
 
+    def update(self, commit=True, **kwargs):
+        return self._set_attributes(**kwargs).save(commit)
+
     def _set_attributes(self, **kwargs):
-        for k, v in kwargs.iteritems():
+        for k, v in kwargs.items():
 
             if k.startswith('_'):
                 raise ValueError('私有属性不允许被设置')

@@ -10,7 +10,7 @@ def jsonp(f):
     def decorated_function(*args, **kwargs):
         callback = request.args.get('callback', False)
         if callback:
-            data = str(f(*args, **kwargs).data)
+            data = str(f(*args, **kwargs))
             content = str(callback) + '(' + data + ')'
             mime_type = 'application/javascript'
             return current_app.response_class(content, mimetype=mime_type)
