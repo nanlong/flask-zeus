@@ -1,7 +1,6 @@
 # encoding:utf-8
 from __future__ import unicode_literals
 from __future__ import absolute_import
-import qiniu
 import random
 
 avatars = [
@@ -551,6 +550,6 @@ def gen_avatar_url(filename):
     avatar_url = '{}{}'.format(domain, filename)
     return avatar_url
 
-if __name__ == '/__main__':
+if __name__ == '__main__':
     avatar_img = get_avatar_img()
     print gen_avatar_url(avatar_img)
