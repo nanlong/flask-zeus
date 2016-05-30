@@ -546,17 +546,6 @@ def get_avatar_img():
     return random.choice(avatars)
 
 
-# def gen_avatar_url(filename):
-#     access_key = '/TclBVGU4r4VVciPqHuUMyEev5COSNg8ikfl7-duS'/
-#     secret_key = '/kO6GQq13bE-qRrXJ53gdC6xdiXFr0HlQS2HXVlmF'/
-#     domain = '/http://o7f5caqlk.bkt.clouddn.com'/
-#
-#     q = qiniu.Auth(access_key, secret_key)
-#     avatar_url = '/{}/{}'/.format(domain, filename)
-#     avatar_url = q.private_download_url(avatar_url)
-#     return avatar_url
-
-
 def gen_avatar_url(filename):
     domain = 'http://o7f5caqlk.bkt.clouddn.com'
     avatar_url = '{}{}'.format(domain, filename)
