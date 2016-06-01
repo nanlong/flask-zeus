@@ -2,6 +2,7 @@ from flask import request
 from flask_wtf import Form as BaseForm
 from flask_wtf.form import _Auto
 from wtforms import fields
+from wtforms import validators
 from wtforms.ext.csrf.fields import CSRFTokenField
 from wtforms_json import flatten_json
 import werkzeug.datastructures
@@ -59,11 +60,42 @@ class Form(BaseForm):
         return 'str'
 
     @classmethod
+    def output_validators(cls, field_validators):
+        data = []
+        for validator in field_validators:
+            v_name = validator.__class__.__name__
+
+            if isinstance(validator, validators.Length):
+                content = '{} min:{} max:{}'.format(v_name, validator.min, validator.max)
+
+            elif isinstance(validator, validators.Regexp):
+                content = '{} regex:{}'.format(v_name, validator.regex.pattern)
+
+            elif isinstance(validator, validators.EqualTo):
+                content = '{} to:{}'.format(v_name, validator.fieldname)
+
+            elif isinstance(validator, validators.NumberRange):
+                content = '{} range:{}-{}'.format(v_name, validator.min, validator.max)
+
+            elif isinstance(validator, validators.IPAddress):
+                content = '{} type:{}'.format(v_name, 'ipv4' if validator.ipv4 else 'ipv6')
+
+            else:
+                content = v_name
+
+            data.append(content)
+
+        return data
+
+    @classmethod
     def output_field(cls, field):
         data = dict()
         data['name'] = field.name
         data['text'] = field.label.text
         data['type'] = cls.output_field_data_type(field)
+
+        if field.validators:
+            data['validators'] = cls.output_validators(field.validators)
 
         if field.description:
             data['description'] = field.description
@@ -78,6 +110,12 @@ class Form(BaseForm):
             data['form'] = cls.output_form(field.form_class(prefix=field.name))
 
         if isinstance(field, (fields.FieldList,)):
+            if field.min_entries:
+                data['min_entries'] = field.min_entries
+
+            if field.max_entries:
+                data['max_entries'] = field.max_entries
+
             name = '%s-{n}' % (field.short_name,)
             field = field.unbound_field.bind(form=None, name=name, _meta=field.meta)
             try:
@@ -102,10 +140,6 @@ class Form(BaseForm):
             data.append(cls.output_field(field))
 
         return data
-
-    @classmethod
-    def output_field_type(cls, field):
-        pass
 
     @classmethod
     def fields(cls):
