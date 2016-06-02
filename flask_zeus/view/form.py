@@ -1,6 +1,3 @@
-# encoding:utf-8
-from __future__ import unicode_literals
-from __future__ import absolute_import
 from flask import (redirect, flash)
 from flask_login import (current_user)
 from .base import BaseFormView

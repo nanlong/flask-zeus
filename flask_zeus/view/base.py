@@ -1,8 +1,5 @@
-# encoding:utf-8
-from __future__ import unicode_literals
-from __future__ import absolute_import
 from flask import (request, render_template, url_for)
-from flask.ext.login import (login_required)
+from flask_login import (login_required)
 from flask.views import View
 
 
@@ -42,7 +39,9 @@ class BaseView(View):
         # 处理url主体,?之前
         filter_by_ = {}
 
-        for k, v in kwargs.update(self.get_query_filter()).items():
+        kwargs.update(self.get_query_filter())
+
+        for k, v in kwargs.items():
             if self.model.has_property(k):
                 filter_by_[k] = v
 

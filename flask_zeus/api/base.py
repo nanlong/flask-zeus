@@ -1,13 +1,13 @@
-# encoding:utf-8
-from __future__ import unicode_literals
-from __future__ import absolute_import
 from flask import (request, url_for)
+from flask_zeus.fields import (List, Nested)
 
 
 class BaseResource(object):
     # 模型
     # type: sqlalchemy obj 需要继承 CRUDMixin
     model = None
+    model_fields = None
+    url_parse = None
 
     # 创建数据使用的表单
     # type: wtforms obj
@@ -21,29 +21,26 @@ class BaseResource(object):
     # type: wtforms obj
     delete_form = None
 
-    # 输出格式定义
-    # type: flask_restful fields obj
-    output_fields = None
-
+    can_read = True
     # 是否允许创建
     # type: bool
-    allow_create = False
+    can_create = False
 
     # 是否允许更新
     # type: bool
-    allow_update = False
+    can_update = False
 
     # 是否允许删除
     # type: bool
-    allow_delete = False
+    can_delete = False
 
     # 是否允许返回空数据
     # type: bool
-    allow_empty = True
+    can_empty = True
 
     # 是否显示分页
     # type: bool
-    allow_paginate = True
+    can_paginate = True
 
     # 页码
     # type: int
@@ -90,11 +87,11 @@ class BaseResource(object):
         """
         assert self.update_form, 'API Class: {} update_form not set'.format(self.cls_name)
 
-    def check_output_fields(self):
+    def check_model_fields(self):
         """ 检查输出格式是否设置
         :return:
         """
-        assert self.output_fields, 'API Class: {} output_fields not set'.format(self.cls_name)
+        assert self.model_fields, 'API Class: {} model_fields not set'.format(self.cls_name)
 
     def get_stmt(self, **kwargs):
         """ 自定义stmt语句, 需重写, 提供给get方法使用
@@ -117,8 +114,7 @@ class BaseResource(object):
         filter_by_ = {}
 
         for k, v in kwargs.items():
-            if self.model.has_property(k):
-                filter_by_[k] = v
+            filter_by_[k] = v
 
         if filter_by_:
             stmt = stmt.filter_by(**filter_by_)
@@ -180,3 +176,40 @@ class BaseResource(object):
 
     def merge_data(self, data):
         return data
+
+    def format_return(self, fields):
+
+        data = {}
+        for name, field in fields.items():
+            if isinstance(field, List):
+                try:
+                    data[name] = [self.format_return(field.container.nested)]
+                except:
+                    data[name] = [getattr(field.container, 'prompt', '')]
+            elif isinstance(field, Nested):
+                data[name] = self.format_return(field.nested)
+            else:
+                data[name] = getattr(field, 'prompt', '')
+
+        return data
+
+    def output_args(self, url_parse):
+        args = []
+        for item in url_parse.args:
+            item_data = dict()
+            item_data['name'] = item.name
+            item_data['help'] = item.help
+            item_data['type'] = item.type.__name__
+            item_data['required'] = item.required
+
+            if item.choices:
+                item_data['choices'] = item.choices
+
+            if item.default:
+                item_data['default'] = item.default
+
+            args.append(item_data)
+
+        return args
+
+

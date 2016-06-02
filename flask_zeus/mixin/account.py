@@ -1,6 +1,3 @@
-# encoding:utf-8
-from __future__ import unicode_literals
-from __future__ import absolute_import
 from flask import current_app
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 from werkzeug.security import generate_password_hash, check_password_hash

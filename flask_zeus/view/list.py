@@ -1,6 +1,3 @@
-# encoding:utf-8
-from __future__ import unicode_literals
-from __future__ import absolute_import
 from flask_login import (login_required, current_user)
 from .base import BaseListView
 

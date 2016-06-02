@@ -1,18 +1,10 @@
-# encoding:utf-8
-"""
-1. 尽量避免使用外键关联
-2. 定义字段的时候请完善doc参数
-    id = db.Column('id', db.INT, primary_key=True, doc='主键ID')
-"""
-from __future__ import unicode_literals
-from __future__ import absolute_import
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import orm
-from sqlalchemy.ext.associationproxy import AssociationProxy
+from sqlalchemy import orm, text
 from sqlalchemy.ext.declarative import declared_attr
-from datetime import datetime
-from sqlalchemy import text
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.dialects.postgres import UUID
+from datetime import datetime
+from flask_login import current_user
+from flask_sqlalchemy import SQLAlchemy
 
 
 db = SQLAlchemy()
@@ -29,7 +21,7 @@ class BaseMixin(object):
         mapper = getattr(cls, '__mapper__')
 
         if mapper and hasattr(mapper, 'iterate_properties'):
-            properties = [p.key for p in mapper.iterate_properties if isinstance(p, (orm.ColumnProperty,))]
+            properties = [p.key.lstrip('_') for p in mapper.iterate_properties if isinstance(p, (orm.ColumnProperty,))]
 
         return properties
 
@@ -68,11 +60,11 @@ class CRUDMixin(BaseMixin):
 
     @declared_attr
     def created_at(self):
-        return db.Column('created_at', db.TIMESTAMP, default=datetime.now, index=True, nullable=False, doc='创建时间')
+        return db.Column('created_at', db.DateTime, default=datetime.now, index=True, nullable=False, doc='创建时间')
 
     @declared_attr
     def updated_at(self):
-        return db.Column('updated_at', db.TIMESTAMP, default=datetime.now, index=True, nullable=False, doc='更新时间')
+        return db.Column('updated_at', db.DateTime, default=datetime.now, index=True, nullable=False, doc='更新时间')
 
     @declared_attr
     def deleted(self):
@@ -118,4 +110,91 @@ class CRUDMixin(BaseMixin):
                 setattr(self, k, v)
 
         return self
+
+
+class DeletedMixin(object):
+
+    @declared_attr
+    def deleted(self):
+        return db.Column('deleted', db.Boolean, default=False, index=True, doc='是否删除')
+
+
+class EntryColumnMixin:
+    field = None
+
+    @declared_attr
+    def _entry_type(self):
+        return db.Column('entry_type', db.String(255), index=True)
+
+    @declared_attr
+    def _entry_id(self):
+        return db.Column('entry_id', UUID(as_uuid=True), index=True)
+
+    @hybrid_property
+    def entry_type(self):
+        if self.has_property('entry_type'):
+            return self._entry_type
+        return self.__class__.__name__.lower()
+
+    @entry_type.setter
+    def entry_type(self, value):
+        self._entry_type = value
+
+    @entry_type.expression
+    def entry_type(cls):
+        return cls._entry_type
+
+    @hybrid_property
+    def entry_id(self):
+        if self.has_property('entry_id'):
+            return self._entry_id
+        return self.id
+
+    @entry_id.setter
+    def entry_id(self, value):
+        self._entry_id = value
+
+    @entry_id.expression
+    def entry_id(cls):
+        return cls._entry_id
+
+    @classmethod
+    def for_entries(cls, items, field=None, child=None):
+        field = field or cls.field
+
+        if not field:
+            raise AttributeError('需要设置field值')
+
+        data = items
+        if child:
+            data = [getattr(item, child) for item in items]
+
+        data_id = set([item.id for item in data])
+        results = dict((item_id, False) for item_id in data_id)
+
+        if current_user.is_authenticated:
+            res = cls.query \
+                .filter(cls.entry_id.in_(data_id)) \
+                .filter_by(user_id=current_user.id) \
+                .all()
+            for item in res:
+                results[item.entry_id] = True
+
+        if field:
+            for item in data:
+                setattr(item, field, results.get(item.id))
+
+        return items
+
+
+class EntryMixin:
+
+    @property
+    def entry_type(self):
+        return self.__class__.__name__.lower()
+
+    @property
+    def entry_id(self):
+        return self.id
+
 

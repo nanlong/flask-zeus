@@ -1,6 +1,3 @@
-# encoding:utf-8
-from __future__ import unicode_literals
-from __future__ import absolute_import
 import pickle
 from datetime import timedelta
 from uuid import uuid4

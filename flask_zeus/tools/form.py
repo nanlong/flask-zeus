@@ -127,10 +127,13 @@ class Form(BaseForm):
         return data
 
     @classmethod
-    def output_form(cls, form):
+    def output_form(cls, form, **kwargs):
         data = []
 
         for field in form:
+            if field.name in kwargs.keys():
+                continue
+
             if isinstance(field, (fields.SubmitField,)):
                 continue
 
@@ -142,6 +145,6 @@ class Form(BaseForm):
         return data
 
     @classmethod
-    def fields(cls):
+    def fields(cls, **kwargs):
         form = cls()
-        return cls.output_form(form)
+        return cls.output_form(form, **kwargs)

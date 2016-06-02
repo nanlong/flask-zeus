@@ -1,7 +1,7 @@
 from flask_restful import fields
 
 
-class FieldMixin:
+class FieldMixin(fields.Raw):
 
     def __init__(self, prompt='', *args, **kwargs):
         self.prompt = prompt
@@ -21,7 +21,10 @@ class String(FieldMixin, fields.String):
 
 
 class Url(FieldMixin, fields.Url):
-    pass
+
+    def __init__(self, prompt='', *args, **kwargs):
+        kwargs['absolute'] = True
+        super().__init__(prompt, *args, **kwargs)
 
 
 class Boolean(FieldMixin, fields.Boolean):
@@ -41,7 +44,10 @@ class Arbitrary(FieldMixin, fields.Arbitrary):
 
 
 class DateTime(FieldMixin, fields.DateTime):
-    pass
+
+    def __init__(self, prompt='', *args, **kwargs):
+        kwargs['dt_format'] = 'iso8601'
+        super().__init__(prompt, *args, **kwargs)
 
 
 class Fixed(FieldMixin, fields.Fixed):
@@ -54,3 +60,4 @@ class List(fields.List):
 
 class Nested(fields.Nested):
     pass
+

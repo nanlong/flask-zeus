@@ -1,6 +1,3 @@
-# encoding:utf-8
-from __future__ import unicode_literals
-from __future__ import absolute_import
 from flask import session
 from flask_oauthlib.client import OAuth
 from werkzeug.urls import url_parse, url_encode
