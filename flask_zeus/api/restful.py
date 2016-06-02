@@ -1,6 +1,7 @@
 from flask import request
 from flask_restful import (Resource, marshal)
 from flask_login import (login_required, current_user)
+from collections import ChainMap
 from .base import BaseResource
 from .error import *
 
@@ -95,9 +96,11 @@ class RestfulResource(BaseResource, Resource):
                 field.data = v
 
         if form.validate_on_submit():
+            data = ChainMap(form.data, kwargs)
             item = self.model()
-            item = item.update(commit=False, **form.data)
-            item = item.update(commit=False, **kwargs)
+
+            for k, v in data.items():
+                setattr(item, k, v)
 
             if self.model.has_property('user_id'):
                 item.user_id = current_user.id
@@ -140,7 +143,9 @@ class RestfulResource(BaseResource, Resource):
                 field.data = v
 
         if form.validate_on_submit():
-            item = item.update(**form.data)
+            for k, v in form.data.items():
+                setattr(item, k, v)
+            item.save()
             return marshal(item, self.model_fields), 200
 
         raise ZeusBadRequest(details=form.errors)
@@ -151,7 +156,7 @@ class RestfulResource(BaseResource, Resource):
         :param kwargs:
         :return: None
         """
-        if self.can_delete:
+        if not self.can_delete:
             raise ZeusMethodNotAllowed
 
         self.check_model()
