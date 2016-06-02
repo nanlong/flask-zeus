@@ -1,12 +1,29 @@
+# 说明
+此为作者平时工作经验总结,不推荐除作者以外的人员使用,此代码库引起的所有后果,作者概不负责.
+(ps: 能看懂就看懂,不能看懂活该!)
+
+# 依赖
+
+1. python >= 3.5
+2. flask >= 0.11
+3. postgresql >= 9.5
+4. 一些flask扩展 (flask-login, flask-wtf, flask-sqlalchemy, flask-restful, WTForms-JSON, ...等等)
+
 # 模型
 
     from flask_zeus.mixin import (CRUDMixin, DeletedMixin, EntryMixin, EntryColumnMixin, AccountMixin)
 
 1. CRUDMixin
+    包括(id, created_at, updated_at, deleted)等字段
+    包括(create, update, delete, save)等方法
 2. DeletedMixin
+    就有个 deleted 字段
 3. EntryMixin
 4. EntryColumnMixin
 5. AccountMixin
+    包括(email, password_hash, email_confirmed)等字段
+    包括(password, token)等属性
+    包括(verify_password, get_by_token, get_by_account, generate_token, verify_token, load_token, confirm)
 
 简单模型定义
 
@@ -44,6 +61,9 @@
 
 # 接口输出字段
     
+为接口定义模型的输出格式
+
+
     from flask_zeus import fields
     
     user_fields = {
@@ -70,6 +90,22 @@
     page_args.add_argument('per_page', type=int, help='每页显示个数', location='args')
 
 # REST接口
+
+增删改查接口定义 (get, post, put, delete)
+重要属性 model(模型), model_fields(模型输出), create_form(post方法使用的表单类), update_form(put方法使用的表单类)
+请求方式有开关可控制 can_read, can_create, can_update, can_delete
+
+##### GET:
+
+如果url中包含id字段,输出详情
+否则输出列表
+列表中包含分页信息
+
+#### POST:
+#### PUT:
+#### DELETE:
+
+看源码吧
 
     from flask_restful import (marshal)
     from flask_zeus.api import RestfulResource
@@ -168,9 +204,15 @@ body:
 
 # Toggle接口
 
-    from flask_zeus.api import ToggleResource_
+    from flask_zeus.api import ToggleResource
+
+    # 有一种接口类型是开关形式的,比如点赞,关注. 
+    # 请求发过来,如果数据存在就把数据删除(取消点赞,取消关注), 否则就创建数据(点赞,关注)
+    # 这个时候使用ToggleResource, 只支持POST方法
 
 # 列表视图
+
+用于pc端html页面
 
     from . import square as app
     from app.models import (Post, Comment, Praise, Follow)
@@ -195,6 +237,8 @@ body:
 
 # 详情视图
 
+用于pc端html页面
+
     from . import square as app
     from app.models import (Post, Comment, Praise, Follow)
     from app.api_v1.comment.forms import (CommentForm)
@@ -215,6 +259,8 @@ body:
 
 
 # 表单提交视图
+
+用于pc端html页面
     
     @app.route('/shop/create/', endpoint='shop_create')
     class ShopCreateView(CreateView):
