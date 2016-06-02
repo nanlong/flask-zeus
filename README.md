@@ -295,4 +295,26 @@ body:
             return {'user_id': current_user.id}
 
 
+# 逻辑解耦
     
+如果希望在数据创建前 或者 创建后做一些操作,该怎么办呢?
+    
+1. SQLAlchemy event (伟大的SQLAlchemy带来的神器)
+
+比如我们在每次模型update操作的时候,更新模型的updated_at值:
+
+    from sqlalchemy import event
+    from sqlalchemy.orm import mapper
+    
+    def mapper_update(mapper, connection, target):
+        if target.has_property('updated_at'):
+            target.updated_at = datetime.datetime.now()
+    
+    event.listen(mapper, 'before_update', mapper_update)
+    
+
+2. blinker signal (信号,相当强大)
+
+在很多第三方扩展中,都有提供信号.比如flask-login中的(user_logged_in, user_logged_out, user_loaded_from_cookie, user_loaded_from_header, user_loaded_from_request, user_login_confirmed, user_unauthorized, user_needs_refresh, user_accessed, session_protected)
+
+1个信号就代表一个动作,通过订阅信号,来实现动作触发后的后续操作
