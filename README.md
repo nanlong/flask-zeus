@@ -1,5 +1,7 @@
 # 说明
+
 此为作者平时工作经验总结,不推荐除作者以外的人员使用,此代码库引起的所有后果,作者概不负责.
+
 (ps: 能看懂就看懂,不能看懂活该!)
 
 # 依赖
@@ -14,15 +16,25 @@
     from flask_zeus.mixin import (CRUDMixin, DeletedMixin, EntryMixin, EntryColumnMixin, AccountMixin)
 
 1. CRUDMixin
+
     包括(id, created_at, updated_at, deleted)等字段
+    
     包括(create, update, delete, save)等方法
+    
 2. DeletedMixin
+
     就有个 deleted 字段
+    
 3. EntryMixin
+
 4. EntryColumnMixin
+
 5. AccountMixin
+
     包括(email, password_hash, email_confirmed)等字段
+    
     包括(password, token)等属性
+    
     包括(verify_password, get_by_token, get_by_account, generate_token, verify_token, load_token, confirm)
 
 简单模型定义
@@ -92,13 +104,17 @@
 # REST接口
 
 增删改查接口定义 (get, post, put, delete)
+
 重要属性 model(模型), model_fields(模型输出), create_form(post方法使用的表单类), update_form(put方法使用的表单类)
+
 请求方式有开关可控制 can_read, can_create, can_update, can_delete
 
 ##### GET:
 
 如果url中包含id字段,输出详情
+
 否则输出列表
+
 列表中包含分页信息
 
 #### POST:
