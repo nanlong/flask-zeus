@@ -1,2 +1,2 @@
-from .rest import RestfulResource
-from .toggle import ToggleResource
+from .restful import RestfulApi
+from .toggle import ToggleApi
