@@ -1,6 +1,5 @@
 from flask import (request, url_for)
-
-from flask.ext.zeus.api.fields import (List, Nested)
+from .fields import (List, Nested)
 
 
 class BaseResource(object):
