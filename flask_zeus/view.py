@@ -1,6 +1,6 @@
-from flask import (request, render_template, url_for)
-from flask_login import (login_required)
+from flask import (request, render_template, url_for, redirect, flash)
 from flask.views import View
+from flask_login import (login_required, current_user)
 
 
 class BaseView(View):
@@ -117,3 +117,93 @@ class BaseFormView(BaseView):
     def get_next_url(self, **kwargs):
         """ 获取跳转链接 """
         return request.args.get('next') or url_for(request.endpoint, **kwargs)
+
+
+class ListView(BaseListView):
+
+    def dispatch_request(self, **kwargs):
+        stmt = self.get_query(**kwargs)
+        pagination = stmt.paginate(*self.get_paginate_args(), error_out=self.error_out)
+        context = self.get_context()
+        items = self.merge_data(pagination.items)
+        context.update({
+            'items': items,
+            'pagination': pagination
+        })
+        return self.render(**context)
+
+
+class DetailView(BaseDetailView):
+
+    def dispatch_request(self, **kwargs):
+        stmt = self.get_query(**kwargs)
+        item = stmt.first()
+        context = self.get_context()
+        context.update({
+            'item': item
+        })
+        return self.render(**context)
+
+
+class CreateView(BaseFormView):
+
+    def dispatch_request(self, **kwargs):
+        form = self.get_form()(csrf_enabled=self.csrf_enabled)
+
+        if form.validate_on_submit():
+
+            item = self.model()
+
+            for k, v in form.data.iteritems():
+                setattr(item, k, v)
+
+            item = item.update(commit=False, **kwargs)
+
+            if self.model.has_property('user_id'):
+                item.user_id = current_user.id
+
+            item.save()
+
+            if self.success_message:
+                flash(self.success_message, category='success')
+
+            return redirect(self.get_next_url(**kwargs))
+
+        context = self.get_context()
+        context.update({
+            'form': form
+        })
+        return self.render(**context)
+
+
+class UpdateView(BaseFormView):
+
+    def dispatch_request(self, **kwargs):
+
+        stmt = self.get_query(**kwargs)
+        item = stmt.first_or_404()
+
+        form = self.get_form()(obj=item, csrf_enabled=self.csrf_enabled)
+
+        if form.validate_on_submit():
+
+            for k, v in form.data.iteritems():
+                setattr(item, k, v)
+
+            item = item.update(commit=False, **kwargs)
+
+            if self.model.has_property('user_id'):
+                item.user_id = current_user.id
+
+            item.save()
+
+            if self.success_message:
+                flash(self.success_message, category='success')
+
+            return redirect(self.get_next_url(**kwargs))
+
+        context = self.get_context()
+        context.update({
+            'form': form
+        })
+        return self.render(**context)
