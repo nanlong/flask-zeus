@@ -1,5 +1,3 @@
-from flask import Flask
-from flask import Blueprint as BaseBlueprint
 from flask import request
 from flask_wtf import Form as BaseForm
 from flask_wtf.form import _Auto
@@ -8,47 +6,6 @@ from wtforms import validators
 from wtforms.ext.csrf.fields import CSRFTokenField
 from wtforms_json import flatten_json
 import werkzeug.datastructures
-from flask import has_app_context
-import types
-
-
-def create_app(import_name, config, config_name='default', ext_list=None, bp_list=None, **kwargs):
-    app = Flask(import_name, **kwargs)
-    app_config = config.get(config_name)
-    app.config.from_object(app_config)
-
-    if hasattr(app_config, 'init_app'):
-        app_config.init_app(app)
-
-    if ext_list and isinstance(ext_list, (list, tuple)):
-        for ext in ext_list:
-            ext.init_app(app)
-
-    if bp_list and isinstance(bp_list, (list, tuple)):
-        for bp in bp_list:
-            app.register_blueprint(bp)
-
-    return app
-
-
-class Blueprint(BaseBlueprint):
-
-    def route(self, rule, **options):
-
-        def decorator(f):
-            endpoint = options.pop('endpoint', f.__name__)
-
-            view_func = f
-
-            if not isinstance(f, types.FunctionType):
-                class_args = options.pop('class_args', [])
-                class_kwargs = options.pop('class_kwargs', {})
-                view_func = f.as_view(endpoint, *class_args, **class_kwargs)
-
-            self.add_url_rule(rule, endpoint, view_func, **options)
-            return f
-
-        return decorator
 
 
 class Form(BaseForm):
@@ -191,39 +148,3 @@ class Form(BaseForm):
     def fields(cls, **kwargs):
         form = cls()
         return cls.output_form(form, **kwargs)
-
-
-try:
-    from celery import Celery
-
-    class ZeusCelery(Celery):
-        app = None
-
-        def __init__(self, *args, **kwargs):
-            super(ZeusCelery, self).__init__(*args, **kwargs)
-            self.patch_task()
-
-            if 'application' in kwargs:
-                self.init_app(kwargs['application'])
-
-        def patch_task(self):
-            base_task = self.Task
-            _celery = self
-
-            class ContextTask(base_task):
-                abstract = True
-
-                def __call__(self, *args, **kwargs):
-                    if has_app_context():
-                        return base_task.__call__(self, *args, **kwargs)
-
-                    with _celery.app.app_context():
-                        return base_task.__call__(self, *args, **kwargs)
-
-            setattr(self, 'Task', ContextTask)
-
-        def init_app(self, app):
-            self.app = app
-            self.config_from_object(app.config)
-except:
-    pass
