@@ -1,4 +1,4 @@
-__version__ = "0.1.7"
+__version__ = "0.1.8"
 from .wraper.application import create_app
 from .wraper.blueprint import Blueprint
 from .wraper.form import Form
