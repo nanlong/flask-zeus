@@ -1,59 +1,31 @@
 from sqlalchemy.ext.declarative import declared_attr
-from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.dialects.postgres import UUID
+from flask_login import current_user
 from .base import (db)
 from .crud import (CRUDMixin)
 
 
-class EntryMixin:
+class MarshalLabelMixin:
 
-    @property
-    def entry_type(self):
-        return self.__class__.__name__.lower()
+    def __marshallable__(self):
+        data = self.__dict__
+        data.update({
+            'entry_type': self.__class__.__name__.lower(),
+            'entry_id': self.id
+        })
+        return data
 
-    @property
-    def entry_id(self):
-        return self.id
 
-
-class EntryColumnMixin(CRUDMixin):
+class EntryMixin(CRUDMixin):
     field = None
 
     @declared_attr
-    def _entry_type(self):
+    def entry_type(self):
         return db.Column('entry_type', db.String(255), index=True)
 
     @declared_attr
-    def _entry_id(self):
-        return db.Column('entry_id', UUID(as_uuid=True), index=True)
-
-    @hybrid_property
-    def entry_type(self):
-        if self.has_property('entry_type'):
-            return self._entry_type
-        return self.__class__.__name__.lower()
-
-    @entry_type.setter
-    def entry_type(self, value):
-        self._entry_type = value
-
-    @entry_type.expression
-    def entry_type(cls):
-        return cls._entry_type
-
-    @hybrid_property
     def entry_id(self):
-        if self.has_property('entry_id'):
-            return self._entry_id
-        return self.id
-
-    @entry_id.setter
-    def entry_id(self, value):
-        self._entry_id = value
-
-    @entry_id.expression
-    def entry_id(cls):
-        return cls._entry_id
+        return db.Column('entry_id', UUID(as_uuid=True), index=True)
 
     @classmethod
     def for_entries(cls, items, field=None, child=None):

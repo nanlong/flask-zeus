@@ -6,7 +6,7 @@ from .base import BaseResource
 from .errors import *
 
 
-class RestfulResource(BaseResource, Resource):
+class RestfulApi(BaseResource, Resource):
     """
     example:
         from app.models import Post

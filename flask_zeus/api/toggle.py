@@ -4,7 +4,7 @@ from .base import BaseResource
 from .errors import *
 
 
-class ToggleResource(BaseResource, Resource):
+class ToggleApi(BaseResource, Resource):
 
     @login_required
     def post(self, **kwargs):
