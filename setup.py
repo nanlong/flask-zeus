@@ -1,5 +1,4 @@
 from distutils.core import setup
-from setuptools import find_packages
 
 PACKAGE = "flask_zeus"
 NAME = "flask-zeus"
