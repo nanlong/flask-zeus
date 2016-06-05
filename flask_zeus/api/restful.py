@@ -1,7 +1,6 @@
 from flask import request
 from flask_restful import (Resource, marshal)
 from flask_login import (login_required, current_user)
-from collections import ChainMap
 from .base import BaseResource
 from .errors import *
 
@@ -96,10 +95,9 @@ class RestfulApi(BaseResource, Resource):
                 field.data = v
 
         if form.validate_on_submit():
-            data = ChainMap(form.data, kwargs)
             item = self.model()
 
-            for k, v in data.items():
+            for k, v in form.data.items():
                 setattr(item, k, v)
 
             if self.model.has_property('user_id'):

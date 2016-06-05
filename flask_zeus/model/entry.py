@@ -10,10 +10,14 @@ class MarshalLabelMixin:
     def __marshallable__(self):
         data = self.__dict__
         data.update({
-            'entry_type': self.__class__.__name__.lower(),
+            'entry_type': self.cls_entry_type(),
             'entry_id': self.id
         })
         return data
+
+    @classmethod
+    def cls_entry_type(cls):
+        return cls.__name__.lower()
 
 
 class EntryMixin(CRUDMixin):
