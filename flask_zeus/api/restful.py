@@ -87,11 +87,7 @@ class RestfulApi(BaseResource, Resource):
         if not self.model.has_property('user_id'):
             raise ZeusMethodNotAllowed
 
-        form = self.create_form(csrf_enabled=self.csrf_enabled)
-
-        for k, v in kwargs.items():
-            if form.has_field(k):
-                form.field.data = v
+        form = self.get_create_form(**kwargs)
 
         if form.validate_on_submit():
             item = self.model()
@@ -133,7 +129,7 @@ class RestfulApi(BaseResource, Resource):
         if item.user_id != current_user.id:
             raise ZeusUnauthorized
 
-        form = self.get_update_form(item, **kwargs)
+        form = self.get_update_form(**kwargs)
 
         if form.validate_on_submit():
             for k, v in form.data.items():
