@@ -10,12 +10,18 @@ class BaseFormView(BaseView):
     methods = ['GET', 'POST']
     decorators = [login_required]
 
-    def get_form(self):
+    def get_form(self, obj=None, **kwargs):
         """ 获取 wtforms 表单"""
         if not self.form:
             raise AttributeError('需要设置form值')
 
-        return self.form
+        form = self.form(obj=obj, csrf_enabled=self.csrf_enabled)
+
+        for k, v in kwargs.items():
+            if form.has_field(k):
+                form.field.data = v
+
+        return form
 
     def get_next_url(self, **kwargs):
         """ 获取跳转链接 """
@@ -25,7 +31,7 @@ class BaseFormView(BaseView):
 class CreateView(BaseFormView):
 
     def dispatch_request(self, **kwargs):
-        form = self.get_form()(csrf_enabled=self.csrf_enabled)
+        form = self.get_form(**kwargs)
 
         if form.validate_on_submit():
 
@@ -33,8 +39,6 @@ class CreateView(BaseFormView):
 
             for k, v in form.data.iteritems():
                 setattr(item, k, v)
-
-            item = item.update(commit=False, **kwargs)
 
             if self.model.has_property('user_id'):
                 item.user_id = current_user.id
@@ -60,14 +64,12 @@ class UpdateView(BaseFormView):
         stmt = self.get_query(**kwargs)
         item = stmt.first_or_404()
 
-        form = self.get_form()(obj=item, csrf_enabled=self.csrf_enabled)
+        form = self.get_form(obj=item, **kwargs)
 
         if form.validate_on_submit():
 
             for k, v in form.data.iteritems():
                 setattr(item, k, v)
-
-            item = item.update(commit=False, **kwargs)
 
             if self.model.has_property('user_id'):
                 item.user_id = current_user.id

@@ -90,9 +90,8 @@ class RestfulApi(BaseResource, Resource):
         form = self.create_form(csrf_enabled=self.csrf_enabled)
 
         for k, v in kwargs.items():
-            field = getattr(form, k, None)
-            if field:
-                field.data = v
+            if form.has_field(k):
+                form.field.data = v
 
         if form.validate_on_submit():
             item = self.model()
@@ -104,6 +103,7 @@ class RestfulApi(BaseResource, Resource):
                 item.user_id = current_user.id
 
             item.save()
+
             return marshal(item, self.model_fields), 201
 
         raise ZeusBadRequest(details=form.errors)
@@ -133,17 +133,14 @@ class RestfulApi(BaseResource, Resource):
         if item.user_id != current_user.id:
             raise ZeusUnauthorized
 
-        form = self.update_form(csrf_enabled=self.csrf_enabled)
-
-        for k, v in kwargs.items():
-            field = getattr(form, k)
-            if field:
-                field.data = v
+        form = self.get_update_form(item, **kwargs)
 
         if form.validate_on_submit():
             for k, v in form.data.items():
                 setattr(item, k, v)
+
             item.save()
+
             return marshal(item, self.model_fields), 200
 
         raise ZeusBadRequest(details=form.errors)
@@ -162,10 +159,10 @@ class RestfulApi(BaseResource, Resource):
         if not kwargs or not self.model.has_property('user_id'):
             raise ZeusMethodNotAllowed
 
-        if self.delete_form:
-            form = self.delete_form()
-            if not form.validate_on_submit():
-                raise ZeusBadRequest(details=form.errors)
+        form = self.get_delete_form(**kwargs)
+
+        if form and not form.validate():
+            raise ZeusBadRequest(details=form.errors)
 
         stmt = self.generate_stmt(**kwargs)
         item = stmt.first()

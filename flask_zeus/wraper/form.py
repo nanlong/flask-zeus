@@ -20,7 +20,7 @@ class Form(BaseForm):
         super(Form, self).__init__(formdata, *args, **kwargs)
 
     @classmethod
-    def output_field_data_type(cls, field):
+    def __output_field_data_type(cls, field):
         if isinstance(field, (
                 fields.HiddenField,
                 fields.StringField,
@@ -60,7 +60,7 @@ class Form(BaseForm):
         return 'str'
 
     @classmethod
-    def output_validators(cls, field_validators):
+    def __output_validators(cls, field_validators):
         data = []
         for validator in field_validators:
             v_name = validator.__class__.__name__
@@ -88,14 +88,14 @@ class Form(BaseForm):
         return data
 
     @classmethod
-    def output_field(cls, field):
+    def __output_field(cls, field):
         data = dict()
         data['name'] = field.name
         data['text'] = field.label.text
-        data['type'] = cls.output_field_data_type(field)
+        data['type'] = cls.__output_field_data_type(field)
 
         if field.validators:
-            data['validators'] = cls.output_validators(field.validators)
+            data['validators'] = cls.__output_validators(field.validators)
 
         if field.description:
             data['description'] = field.description
@@ -107,7 +107,7 @@ class Form(BaseForm):
             data['choices'] = field.choices
 
         if isinstance(field, (fields.FormField,)):
-            data['form'] = cls.output_form(field.form_class(prefix=field.name))
+            data['form'] = cls.__output_form(field.form_class(prefix=field.name))
 
         if isinstance(field, (fields.FieldList,)):
             if field.min_entries:
@@ -120,31 +120,35 @@ class Form(BaseForm):
             field = field.unbound_field.bind(form=None, name=name, _meta=field.meta)
             try:
                 prefix = field.name + field.separator
-                data['form'] = cls.output_form(field.form_class(prefix=prefix))
+                data['form'] = cls.__output_form(field.form_class(prefix=prefix))
             except:
-                data['field'] = cls.output_field(field)
+                data['field'] = cls.__output_field(field)
 
         return data
 
     @classmethod
-    def output_form(cls, form, **kwargs):
+    def __output_form(cls, form_fields, **kwargs):
         data = []
 
-        for field in form:
-            if field.name in kwargs.keys():
+        for name, field in form_fields:
+            if name in kwargs.keys():
                 continue
 
             if isinstance(field, (fields.SubmitField,)):
                 continue
 
-            if not form.csrf_enabled and isinstance(field, (CSRFTokenField,)):
+            if not cls().csrf_enabled and isinstance(field, (CSRFTokenField,)):
                 continue
 
-            data.append(cls.output_field(field))
+            data.append(cls.__output_field(field))
 
         return data
 
     @classmethod
     def fields(cls, **kwargs):
-        form = cls()
-        return cls.output_form(form, **kwargs)
+        self = cls()
+        return cls.__output_form(self._fields.items(), **kwargs)
+
+    @classmethod
+    def has_field(cls, name):
+        return name in [k for k, v in cls._unbound_fields]

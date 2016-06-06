@@ -211,3 +211,22 @@ class BaseResource(object):
             args.append(item_data)
 
         return args
+
+    def get_form(self, form_cls, obj=None, **kwargs):
+        form = form_cls(obj=obj, csrf_enabled=self.csrf_enabled)
+
+        for k, v in kwargs.items():
+            if form.has_field(k):
+                form.field.data = v
+
+        return form
+
+    def get_create_form(self, **kwargs):
+        return self.get_form(self.create_form, **kwargs)
+
+    def get_update_form(self, obj=None, **kwargs):
+        return self.get_form(self.update_form, obj=obj, **kwargs)
+
+    def get_delete_form(self, **kwargs):
+        if self.delete_form:
+            return self.get_form(self.delete_form, **kwargs)
