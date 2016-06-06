@@ -21,7 +21,9 @@ class MarshalLabelMixin:
 
 
 class EntryMixin(CRUDMixin):
-    field = None
+    # 属性名称
+    # 例子: is_followed, is_praised
+    attribute = None
 
     @declared_attr
     def entry_type(self):
@@ -32,13 +34,14 @@ class EntryMixin(CRUDMixin):
         return db.Column('entry_id', UUID(as_uuid=True), index=True)
 
     @classmethod
-    def for_entries(cls, items, field=None, child=None):
-        field = field or cls.field
+    def for_entries(cls, items, attribute=None, child=None):
+        attribute = attribute or cls.attribute
 
-        if not field:
+        if not attribute:
             raise AttributeError('需要设置field值')
 
         data = items
+
         if child:
             data = [getattr(item, child) for item in items]
 
@@ -46,16 +49,18 @@ class EntryMixin(CRUDMixin):
         results = dict((item_id, False) for item_id in data_id)
 
         if current_user.is_authenticated:
-            res = cls.query \
-                .filter(cls.entry_id.in_(data_id)) \
-                .filter_by(user_id=current_user.id) \
+            query = getattr(cls, 'query')
+
+            res = query\
+                .filter(cls.entry_id.in_(data_id))\
+                .filter_by(user_id=current_user.id)\
                 .all()
+
             for item in res:
                 results[item.entry_id] = True
 
-        if field:
-            for item in data:
-                setattr(item, field, results.get(item.id))
+        for item in data:
+            setattr(item, attribute, results.get(item.id))
 
         return items
 
