@@ -3,6 +3,8 @@ from sqlalchemy.dialects.postgres import UUID
 from flask_login import current_user
 from .base import (db)
 from .crud import (CRUDMixin)
+from ..decorators import classproperty
+import re
 
 
 class MarshalLabelMixin:
@@ -10,14 +12,15 @@ class MarshalLabelMixin:
     def __marshallable__(self):
         data = self.__dict__
         data.update({
-            'entry_type': self.cls_entry_type(),
-            'entry_id': self.id
+            'entry_type': getattr(self, 'cls_entry_type'),
+            'entry_id': getattr(self, 'id')
         })
         return data
 
-    @classmethod
+    @classproperty
     def cls_entry_type(cls):
-        return cls.__name__.lower()
+        regex = re.compile(r'([A-Z])+')
+        return regex.sub(lambda x: '/{}'.format(x.group(0).lower()), cls.__name__).strip('/')
 
 
 class EntryMixin(CRUDMixin):
