@@ -217,7 +217,7 @@ class BaseResource(object):
 
         for k, v in kwargs.items():
             if form.has_field(k):
-                form.field.data = v
+                getattr(form, k).data = v
 
         return form
 
