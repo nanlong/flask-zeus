@@ -44,17 +44,15 @@ class CreateView(BaseFormView):
                 item.user_id = current_user.id
 
             item.save()
+            self.append_context('item', item)
 
             if self.success_message:
                 flash(self.success_message, category='success')
 
             return redirect(self.get_next_url(**kwargs))
 
-        context = self.get_context()
-        context.update({
-            'form': form
-        })
-        return self.render(**context)
+        self.append_context('form', form)
+        return self.render(**self.context)
 
 
 class UpdateView(BaseFormView):
@@ -75,14 +73,12 @@ class UpdateView(BaseFormView):
                 item.user_id = current_user.id
 
             item.save()
+            self.append_context('item', item)
 
             if self.success_message:
                 flash(self.success_message, category='success')
 
             return redirect(self.get_next_url(**kwargs))
 
-        context = self.get_context()
-        context.update({
-            'form': form
-        })
-        return self.render(**context)
+        self.append_context('form', form)
+        return self.render(**self.context)

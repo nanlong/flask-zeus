@@ -8,23 +8,22 @@ class ToggleApi(BaseResource, Resource):
 
     @login_required
     def post(self, **kwargs):
-        self.check_model()
-        self.check_model_fields()
 
         if not self.model.has_property('user_id'):
             raise ZeusMethodNotAllowed
 
-        stmt = self.generate_stmt(**kwargs)
+        stmt = self.get_query(**kwargs)
         item = stmt.first()
 
         if not item:
-            item = self.model()
+            model = self.get_model()
+            item = model()
             for k, v in kwargs.items():
-                if self.model.has_property(k):
+                if model.has_property(k):
                     setattr(item, k, v)
             item.user_id = current_user.id
             item.save()
-            return marshal(item, self.model_fields), 201
+            return marshal(item, self.get_model_fields()), 201
 
         item.delete()
         return {}, 204

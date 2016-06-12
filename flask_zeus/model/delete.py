@@ -1,6 +1,7 @@
 from sqlalchemy.ext.declarative import declared_attr
 from .base import db
 
+
 class DeletedMixin(object):
 
     @declared_attr

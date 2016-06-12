@@ -18,10 +18,6 @@ class ListView(BaseListView):
     def dispatch_request(self, **kwargs):
         stmt = self.get_query(**kwargs)
         pagination = stmt.paginate(*self.get_paginate_args(), error_out=self.error_out)
-        context = self.get_context()
-        items = self.merge_data(pagination.items)
-        context.update({
-            'items': items,
-            'pagination': pagination
-        })
-        return self.render(**context)
+        self.append_context('items', pagination.items)
+        self.append_context('pagination', pagination)
+        return self.render()

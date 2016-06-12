@@ -65,3 +65,6 @@ class CRUDMixin(BaseMixin):
                 setattr(self, k, v)
 
         return self
+
+    def increase(self, field, step=1):
+        self.update(**{field: getattr(self, field) + step})

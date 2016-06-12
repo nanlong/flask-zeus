@@ -1,12 +1,13 @@
 from flask import (request, url_for)
-from .fields import (List, Nested)
+from .errors import ZeusNotFound
+from ..base.mixin import QueryMixin, OutputMixin
 
 
-class BaseResource(object):
-    # 模型
-    # type: sqlalchemy obj 需要继承 CRUDMixin
-    model = None
+class BaseResource(QueryMixin, OutputMixin):
+    # 输出
     model_fields = None
+
+    # url参数解析
     url_parse = None
 
     # 创建数据使用的表单
@@ -69,79 +70,13 @@ class BaseResource(object):
         """
         return self.__class__.__name__
 
-    def check_model(self):
-        """ 检查模型是否设置
-        :return:
-        """
-        assert self.model, 'API Class: {} model not set'.format(self.cls_name)
-
-    def check_create_form(self):
-        """ 检查创建表单是否设置
-        :return:
-        """
-        assert self.create_form, 'API Class: {} create_form not set'.format(self.cls_name)
-
-    def check_update_form(self):
-        """ 检查更新表单是否设置
-        :return:
-        """
-        assert self.update_form, 'API Class: {} update_form not set'.format(self.cls_name)
-
-    def check_model_fields(self):
+    def get_model_fields(self):
         """ 检查输出格式是否设置
         :return:
         """
-        assert self.model_fields, 'API Class: {} model_fields not set'.format(self.cls_name)
-
-    def get_stmt(self, **kwargs):
-        """ 自定义stmt语句, 需重写, 提供给get方法使用
-        :return: sqlalchemy query
-        """
-        return None
-
-    def generate_stmt(self, **kwargs):
-        """ 生成查询语句
-        :param kwargs:
-        :return: sqlalchemy query
-        """
-        # 如有自定义语句,直接返回
-        if self.get_stmt(**kwargs):
-            return self.get_stmt(**kwargs)
-
-        stmt = self.model.query
-
-        # 处理url主体,?之前
-        filter_by_ = {}
-
-        for k, v in kwargs.items():
-            filter_by_[k] = v
-
-        if filter_by_:
-            stmt = stmt.filter_by(**filter_by_)
-
-        # 处理url参数?之后
-        # 默认参数为多值,使用in操作符
-        # 如果参数为单值,并且开头或结尾为%,使用like操作符
-        filter_ = []
-
-        for k, v in request.args.lists():
-            if self.model.has_property(k):
-                if len(v) == 1 and (v[0].startswith('%') or v[0].endswith('%')):
-                    filter_.append(getattr(self.model, k).ilike(v[0]))
-                else:
-                    filter_.append(getattr(self.model, k).in_(v))
-
-        if filter_:
-            stmt = stmt.filter(*filter_)
-
-        # 处理自定义排序
-        if self.order_by and isinstance(self.order_by, (list, tuple)):
-            stmt = stmt.order_by(*self.order_by)
-
-        if self.model.has_property('deleted'):
-            stmt = stmt.filter_by(deleted=False)
-
-        return stmt
+        if not self.model_fields:
+            raise AttributeError('{} 需要设置model_fields'.format(self.cls_name))
+        return self.model_fields
 
     def generate_iter_pages(self, pages, per_page, **kwargs):
         """ 生成分页
@@ -177,56 +112,42 @@ class BaseResource(object):
     def merge_data(self, data):
         return data
 
-    def format_return(self, fields):
-
-        data = {}
-        for name, field in fields.items():
-            if isinstance(field, List):
-                try:
-                    data[name] = [self.format_return(field.container.nested)]
-                except:
-                    data[name] = [getattr(field.container, 'prompt', '')]
-            elif isinstance(field, Nested):
-                data[name] = self.format_return(field.nested)
-            else:
-                data[name] = getattr(field, 'prompt', '')
-
-        return data
-
-    def output_args(self, url_parse):
-        args = []
-        for item in url_parse.args:
-            item_data = dict()
-            item_data['name'] = item.name
-            item_data['help'] = item.help
-            item_data['type'] = item.type.__name__
-            item_data['required'] = item.required
-
-            if item.choices:
-                item_data['choices'] = item.choices
-
-            if item.default:
-                item_data['default'] = item.default
-
-            args.append(item_data)
-
-        return args
-
     def get_form(self, form_cls, obj=None, **kwargs):
         form = form_cls(obj=obj, csrf_enabled=self.csrf_enabled)
-
         for k, v in kwargs.items():
             if form.has_field(k):
                 getattr(form, k).data = v
-
         return form
 
     def get_create_form(self, **kwargs):
+        if not self.create_form:
+            raise AttributeError('{} 需要设置create_form'.format(self.cls_name))
         return self.get_form(self.create_form, **kwargs)
 
     def get_update_form(self, **kwargs):
+        if not self.update_form:
+            raise AttributeError('{} 需要设置update_form'.format(self.cls_name))
         return self.get_form(self.update_form, **kwargs)
 
     def get_delete_form(self, **kwargs):
         if self.delete_form:
             return self.get_form(self.delete_form, **kwargs)
+
+    def get_item(self, **kwargs):
+        stmt = self.get_query(**kwargs)
+        item = stmt.first()
+        if not item:
+            raise ZeusNotFound
+        return item
+
+    def get_pagination(self, **kwargs):
+        page = request.args.get('page', self.default_page, int) or self.default_page
+        per_page = request.args.get('per_page', self.default_per_page, int) or self.default_per_page
+        stmt = self.get_query(**kwargs)
+        pagination = stmt.paginate(page, per_page, error_out=not self.can_empty)
+        items = self.merge_data(pagination.items)
+        return pagination
+
+    def get_itmes(self, **kwargs):
+        stmt = self.get_query(**kwargs)
+        return stmt.all()

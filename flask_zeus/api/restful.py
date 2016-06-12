@@ -13,7 +13,7 @@ class RestfulApi(BaseResource, Resource):
         from app.model_fields import post_fields
 
         @api.resource('/posts/', '/posts/<int:id>/')
-        class PostAPI(ModelResource):
+        class PostAPI(RestfulApi):
             model = Post
             create_form = PostCreateForm
             update_form = PostUpdateForm
@@ -31,45 +31,35 @@ class RestfulApi(BaseResource, Resource):
         if not self.can_read:
             raise ZeusMethodNotAllowed
 
-        self.check_model()
-        self.check_model_fields()
-
-        stmt = self.generate_stmt(**kwargs)
-
         if kwargs.get('id'):
-            item = stmt.first()
-            if not item:
-                raise ZeusNotFound
-            return marshal(item, self.model_fields)
+            item = self.get_item(**kwargs)
+            return marshal(item, self.get_model_fields())
 
         if self.can_paginate:
-            page = request.args.get('page', self.default_page, int) or self.default_page
-            per_page = request.args.get('per_page', self.default_per_page, int) or self.default_per_page
-            pagination = stmt.paginate(page, per_page, error_out=not self.can_empty)
-            items = self.merge_data(pagination.items)
+            pagination = self.get_pagination(**kwargs)
             return {
-                'items': marshal(items, self.model_fields),
+                'items': marshal(pagination.items, self.get_model_fields()),
                 'pagination': OrderedDict([
                     ('has_prev', pagination.has_next),
                     ('has_next', pagination.has_next),
                     ('prev_num', pagination.prev_num),
                     ('next_num', pagination.next_num),
-                    ('prev_url', self.generate_url(pagination.prev_num, per_page, **kwargs) if pagination.has_prev else ''),
-                    ('next_url', self.generate_url(pagination.next_num, per_page, **kwargs) if pagination.has_next else ''),
+                    ('prev_url', self.generate_url(pagination.prev_num, pagination.per_page, **kwargs) if pagination.has_prev else ''),
+                    ('next_url', self.generate_url(pagination.next_num, pagination.per_page, **kwargs) if pagination.has_next else ''),
                     ('page', pagination.page),
-                    ('per_page', per_page),
+                    ('per_page', pagination.per_page),
                     ('pages', pagination.pages),
                     ('total', pagination.total),
-                    ('iter_pages', self.generate_iter_pages(pagination.iter_pages(), per_page, **kwargs)),
+                    ('iter_pages', self.generate_iter_pages(pagination.iter_pages(), pagination.per_page, **kwargs)),
                 ])
             }
         else:
-            items = stmt.all()
+            items = self.get_items(**kwargs)
 
             if not self.can_empty and not items:
                 raise ZeusNotFound
 
-            return marshal(items, self.model_fields)
+            return marshal(items, self.get_model_fields())
 
     @login_required
     def post(self, **kwargs):
@@ -80,27 +70,24 @@ class RestfulApi(BaseResource, Resource):
         if not self.can_create:
             raise ZeusMethodNotAllowed
 
-        self.check_model()
-        self.check_create_form()
-        self.check_model_fields()
-
         if not self.model.has_property('user_id'):
             raise ZeusMethodNotAllowed
 
         form = self.get_create_form(**kwargs)
 
         if form.validate_on_submit():
-            item = self.model()
+            model = self.get_model()
+            item = model()
 
             for k, v in form.data.items():
                 setattr(item, k, v)
 
-            if self.model.has_property('user_id'):
+            if model.has_property('user_id'):
                 item.user_id = current_user.id
 
             item.save()
 
-            return marshal(item, self.model_fields), 201
+            return marshal(item, self.get_model_fields()), 201
 
         raise ZeusBadRequest(details=form.errors)
 
@@ -113,18 +100,10 @@ class RestfulApi(BaseResource, Resource):
         if not self.can_update:
             raise ZeusMethodNotAllowed
 
-        self.check_model()
-        self.check_update_form()
-        self.check_model_fields()
-
         if not kwargs or not self.model.has_property('user_id'):
             raise ZeusMethodNotAllowed
 
-        stmt = self.generate_stmt(**kwargs)
-        item = stmt.first()
-
-        if not item:
-            raise ZeusNotFound
+        item = self.get_item(**kwargs)
 
         if item.user_id != current_user.id:
             raise ZeusUnauthorized
@@ -137,7 +116,7 @@ class RestfulApi(BaseResource, Resource):
 
             item.save()
 
-            return marshal(item, self.model_fields), 200
+            return marshal(item, self.get_model_fields()), 200
 
         raise ZeusBadRequest(details=form.errors)
 
@@ -150,8 +129,6 @@ class RestfulApi(BaseResource, Resource):
         if not self.can_delete:
             raise ZeusMethodNotAllowed
 
-        self.check_model()
-
         if not kwargs or not self.model.has_property('user_id'):
             raise ZeusMethodNotAllowed
 
@@ -160,11 +137,7 @@ class RestfulApi(BaseResource, Resource):
         if form and not form.validate():
             raise ZeusBadRequest(details=form.errors)
 
-        stmt = self.generate_stmt(**kwargs)
-        item = stmt.first()
-
-        if not item:
-            raise ZeusNotFound
+        item = self.get_item(**kwargs)
 
         if item.user_id != current_user.id:
             raise ZeusUnauthorized
@@ -194,8 +167,8 @@ class RestfulApi(BaseResource, Resource):
         if self.can_delete:
             allow.append('DELETE')
 
-        if self.model_fields:
-            data['return'] = self.format_return(self.model_fields)
+        if self.get_model_fields():
+            data['return'] = self.output_fields(self.model_fields)
 
         headers = {
             'Allow': ', '.join(allow),
