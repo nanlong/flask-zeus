@@ -1,4 +1,3 @@
-from flask import request
 from flask_restful import (Resource, marshal)
 from flask_login import (login_required, current_user)
 from .base import BaseResource
@@ -22,6 +21,22 @@ class RestfulApi(BaseResource, Resource):
             can_update = True
             can_delete = True
     """
+    can_read = True
+    # 是否允许创建
+    # type: bool
+    can_create = False
+
+    # 是否允许更新
+    # type: bool
+    can_update = False
+
+    # 是否允许删除
+    # type: bool
+    can_delete = False
+
+    # 是否显示分页
+    # type: bool
+    can_paginate = True
 
     def get(self, **kwargs):
         """ 资源获取

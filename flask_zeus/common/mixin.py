@@ -1,14 +1,29 @@
 from flask import request
 from ..api.fields import (List, Nested)
+from ..api.errors import ZeusNotFound
 
 
 class QueryMixin(object):
     # 模型
     model = None
-    # 分页
-    per_page = 20
     # 排序
     order_by = None
+
+    # 页码
+    # type: int
+    page = 1
+
+    # 每页数据个数
+    # type: int
+    per_page = 20
+
+    can_empty = None
+
+    def get_paginate_args(self):
+        """ 获取分页参数 """
+        page = request.args.get('page', self.page, type=int) or self.page
+        per_page = request.args.get('per_page', self.per_page, type=int) or self.per_page
+        return page, per_page
 
     def get_model(self):
         """ 获取模型 """
@@ -69,6 +84,27 @@ class QueryMixin(object):
 
         return stmt
 
+    def merge_data(self, data):
+        pass
+
+    def get_item(self, **kwargs):
+        stmt = self.get_query(**kwargs)
+        item = stmt.first()
+        if not item:
+            raise ZeusNotFound
+        return item
+
+    def get_pagination(self, **kwargs):
+        stmt = self.get_query(**kwargs)
+        page, per_page = self.get_paginate_args()
+        pagination = stmt.paginate(page, per_page, error_out=not self.can_empty)
+        self.merge_data(pagination.items)
+        return pagination
+
+    def get_items(self, **kwargs):
+        stmt = self.get_query(**kwargs)
+        return stmt.all()
+
 
 class OutputMixin(object):
 
@@ -121,3 +157,42 @@ class ContextMixin(object):
     def remove_context(self, k):
         if k in self.context.keys():
             del self.context[k]
+
+
+class FormMixin(object):
+    # 是否开始csrf验证
+    # type: bool
+    csrf_enabled = True
+
+    # 创建数据使用的表单
+    # type: wtforms obj
+    create_form = None
+
+    # 更新数据使用的表单
+    # type: wtforms obj
+    update_form = None
+
+    # 删除数据使用的表单
+    # type: wtforms obj
+    delete_form = None
+
+    def get_form(self, form_cls, obj=None, **kwargs):
+        form = form_cls(obj=obj, csrf_enabled=self.csrf_enabled)
+        for k, v in kwargs.items():
+            if form.has_field(k):
+                getattr(form, k).data = v
+        return form
+
+    def get_create_form(self, **kwargs):
+        if not self.create_form:
+            raise AttributeError('需要设置create_form')
+        return self.get_form(self.create_form, **kwargs)
+
+    def get_update_form(self, **kwargs):
+        if not self.update_form:
+            raise AttributeError('需要设置update_form')
+        return self.get_form(self.update_form, **kwargs)
+
+    def get_delete_form(self, **kwargs):
+        if self.delete_form:
+            return self.get_form(self.delete_form, **kwargs)

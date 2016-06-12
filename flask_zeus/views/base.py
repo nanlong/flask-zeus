@@ -1,6 +1,6 @@
-from flask import (render_template)
+from flask import (request, url_for, render_template)
 from flask.views import View
-from ..base.mixin import QueryMixin, ContextMixin
+from ..common.mixin import QueryMixin, ContextMixin
 import types
 
 
@@ -32,4 +32,8 @@ class BaseView(View, QueryMixin, ContextMixin):
         response = render_template(template, **self.context)
         self.after_render()
         return response
+
+    def get_next_url(self, **kwargs):
+        """ 获取跳转链接 """
+        return request.args.get('next') or url_for(request.endpoint, **kwargs)
 
