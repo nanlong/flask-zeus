@@ -173,11 +173,11 @@ class RestfulApi(BaseResource, Resource):
 
         if self.can_create:
             allow.append('POST')
-            data['POST'] = self.create_form.fields(**kwargs)
+            data['POST'] = self.create_form.fields(csrf_enabled=self.csrf_enabled, **kwargs)
 
         if self.can_update:
             allow.append('PUT')
-            data['PUT'] = self.update_form.fields(**kwargs)
+            data['PUT'] = self.update_form.fields(csrf_enabled=self.csrf_enabled, **kwargs)
 
         if self.can_delete:
             allow.append('DELETE')

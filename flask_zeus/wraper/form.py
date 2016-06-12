@@ -107,7 +107,8 @@ class Form(BaseForm):
             data['choices'] = field.choices
 
         if isinstance(field, (fields.FormField,)):
-            data['form'] = cls.__output_form(field.form_class(prefix=field.name))
+            self = field.form_class(prefix=field.name)
+            data['form'] = cls.__output_form(self._fields.items())
 
         if isinstance(field, (fields.FieldList,)):
             if field.min_entries:
@@ -137,7 +138,7 @@ class Form(BaseForm):
             if isinstance(field, (fields.SubmitField,)):
                 continue
 
-            if not cls().csrf_enabled and isinstance(field, (CSRFTokenField,)):
+            if not kwargs.get('csrf_enabled', False) and isinstance(field, (CSRFTokenField,)):
                 continue
 
             data.append(cls.__output_field(field))

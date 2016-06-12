@@ -162,7 +162,7 @@ class ContextMixin(object):
 class FormMixin(object):
     # 是否开始csrf验证
     # type: bool
-    csrf_enabled = True
+    csrf_enabled = False
 
     # 创建数据使用的表单
     # type: wtforms obj
