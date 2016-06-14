@@ -58,3 +58,12 @@ class BaseResource(QueryMixin, OutputMixin, FormMixin):
         :return: str
         """
         return url_for(request.endpoint, page=page, per_page=per_page, _external=self.is_full_url, **kwargs)
+
+
+class Item(object):
+
+    def __init__(self, data=None):
+        self.data = data or dict()
+
+    def __marshallable__(self):
+        return self.data

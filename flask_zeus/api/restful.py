@@ -38,6 +38,21 @@ class RestfulApi(BaseResource, Resource):
     # type: bool
     can_paginate = True
 
+    def get_pagination_data(self, pagination, **kwargs):
+        return OrderedDict([
+            ('has_prev', pagination.has_next),
+            ('has_next', pagination.has_next),
+            ('prev_num', pagination.prev_num),
+            ('next_num', pagination.next_num),
+            ('page', pagination.page),
+            ('per_page', pagination.per_page),
+            ('pages', pagination.pages),
+            ('total', pagination.total),
+            ('prev_url', self.generate_url(pagination.prev_num, pagination.per_page, **kwargs) if pagination.has_prev else ''),
+            ('next_url', self.generate_url(pagination.next_num, pagination.per_page, **kwargs) if pagination.has_next else ''),
+            ('iter_pages', self.generate_iter_pages(pagination.iter_pages(), pagination.per_page, **kwargs)),
+        ])
+
     def get(self, **kwargs):
         """ 资源获取
         :param kwargs:
@@ -54,19 +69,7 @@ class RestfulApi(BaseResource, Resource):
             pagination = self.get_pagination(**kwargs)
             return {
                 'items': marshal(pagination.items, self.get_model_fields()),
-                'pagination': OrderedDict([
-                    ('has_prev', pagination.has_next),
-                    ('has_next', pagination.has_next),
-                    ('prev_num', pagination.prev_num),
-                    ('next_num', pagination.next_num),
-                    ('prev_url', self.generate_url(pagination.prev_num, pagination.per_page, **kwargs) if pagination.has_prev else ''),
-                    ('next_url', self.generate_url(pagination.next_num, pagination.per_page, **kwargs) if pagination.has_next else ''),
-                    ('page', pagination.page),
-                    ('per_page', pagination.per_page),
-                    ('pages', pagination.pages),
-                    ('total', pagination.total),
-                    ('iter_pages', self.generate_iter_pages(pagination.iter_pages(), pagination.per_page, **kwargs)),
-                ])
+                'pagination': self.get_pagination_data(pagination, **kwargs)
             }
         else:
             items = self.get_items(**kwargs)
