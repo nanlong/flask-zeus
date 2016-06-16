@@ -37,3 +37,19 @@
         can_create = True
         can_update = True
         can_delete = True
+
+说明:
+
+api1 /posts/ 为资源列表
+
+api2 /posts/<int:id>/为资源详情
+
+两个接口都支持GET方法
+
+两个接口都支持OPTIONS方法,用来查看接口说明.包括支持的method头部信息,不同method的请求数据说明和返回的数据说明.
+
+对api1使用POST方法,用来创建资源
+
+对api2使用PUT方法,用来更新资源
+
+对api2使用DELETE方法,用来删除资源
