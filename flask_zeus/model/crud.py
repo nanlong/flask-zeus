@@ -5,7 +5,14 @@ from datetime import datetime
 from .base import (db, BaseMixin)
 
 
-class CRUDMixin(BaseMixin):
+class DeleteMixin(object):
+
+    @declared_attr
+    def deleted(self):
+        return db.Column('deleted', db.Boolean, default=False, index=True, doc='是否删除')
+
+
+class CRUDMixin(BaseMixin, DeleteMixin):
     """ Basic CRUD mixin
     """
 
@@ -20,10 +27,6 @@ class CRUDMixin(BaseMixin):
     @declared_attr
     def updated_at(self):
         return db.Column('updated_at', db.DateTime, default=datetime.now, index=True, nullable=False, doc='更新时间')
-
-    @declared_attr
-    def deleted(self):
-        return db.Column('deleted', db.Boolean, default=False, index=True, doc='是否删除')
 
     @classmethod
     def get(cls, row_id):
@@ -68,3 +71,4 @@ class CRUDMixin(BaseMixin):
 
     def increase(self, field, step=1):
         self.update(**{field: getattr(self, field) + step})
+

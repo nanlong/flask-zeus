@@ -40,7 +40,7 @@ class RestfulApi(BaseResource, Resource):
 
     def get_pagination_data(self, pagination, **kwargs):
         return OrderedDict([
-            ('has_prev', pagination.has_next),
+            ('has_prev', pagination.has_prev),
             ('has_next', pagination.has_next),
             ('prev_num', pagination.prev_num),
             ('next_num', pagination.next_num),
@@ -93,21 +93,21 @@ class RestfulApi(BaseResource, Resource):
 
         form = self.get_create_form(**kwargs)
 
-        if form.validate_on_submit():
-            model = self.get_model()
-            item = model()
+        if not form.validate_on_submit():
+            raise ZeusBadRequest(details=form.errors)
 
-            for k, v in form.data.items():
-                setattr(item, k, v)
+        model = self.get_model()
+        item = model()
 
-            if model.has_property('user_id'):
-                item.user_id = current_user.id
+        for k, v in form.data.items():
+            setattr(item, k, v)
 
-            item.save()
+        if model.has_property('user_id'):
+            item.user_id = current_user.id
 
-            return marshal(item, self.get_model_fields()), 201
+        item.save()
 
-        raise ZeusBadRequest(details=form.errors)
+        return marshal(item, self.get_model_fields()), 201
 
     @login_required
     def put(self, **kwargs):
@@ -124,19 +124,19 @@ class RestfulApi(BaseResource, Resource):
         item = self.get_item(**kwargs)
 
         if item.user_id != current_user.id:
-            raise ZeusUnauthorized
+            raise ZeusForbidden
 
         form = self.get_update_form(**kwargs)
 
-        if form.validate_on_submit():
-            for k, v in form.data.items():
-                setattr(item, k, v)
+        if not form.validate_on_submit():
+            raise ZeusBadRequest(details=form.errors)
 
-            item.save()
+        for k, v in form.data.items():
+            setattr(item, k, v)
 
-            return marshal(item, self.get_model_fields()), 200
+        item.save()
 
-        raise ZeusBadRequest(details=form.errors)
+        return marshal(item, self.get_model_fields())
 
     @login_required
     def delete(self, **kwargs):
@@ -158,7 +158,7 @@ class RestfulApi(BaseResource, Resource):
         item = self.get_item(**kwargs)
 
         if item.user_id != current_user.id:
-            raise ZeusUnauthorized
+            raise ZeusForbidden
 
         item.delete()
 

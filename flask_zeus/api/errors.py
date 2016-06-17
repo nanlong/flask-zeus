@@ -43,24 +43,25 @@ class ZeusHTTPException(HTTPException):
 
 
 class ZeusBadRequest(BadRequest, ZeusHTTPException):
-    """ 400
-    """
+    """ 400 """
     pass
 
 
 class ZeusUnauthorized(Unauthorized, ZeusHTTPException):
-    """ 401
-    """
+    """ 401 """
+    pass
+
+
+class ZeusForbidden(Forbidden, ZeusHTTPException):
+    """ 403 """
     pass
 
 
 class ZeusNotFound(NotFound, ZeusHTTPException):
-    """ 404
-    """
+    """ 404 """
     pass
 
 
 class ZeusMethodNotAllowed(MethodNotAllowed, ZeusHTTPException):
-    """ 405
-    """
+    """ 405 """
     pass
