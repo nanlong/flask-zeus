@@ -1,5 +1,5 @@
 from flask import (request, url_for)
-from ..common.mixin import (QueryMixin, OutputMixin, FormMixin)
+from .._common.mixin import (QueryMixin, OutputMixin, FormMixin)
 
 
 class BaseResource(QueryMixin, OutputMixin, FormMixin):

@@ -1,7 +1,7 @@
 from flask import (flash, redirect)
 from flask_login import (login_required, current_user)
 from .base import BaseView
-from ..common.mixin import FormMixin
+from .._common.mixin import FormMixin
 
 
 class BaseFormView(BaseView, FormMixin):

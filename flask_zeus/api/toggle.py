@@ -1,10 +1,10 @@
-from flask_restful import (Resource, marshal)
+from flask_restful import (marshal)
 from flask_login import (login_required, current_user)
-from .base import BaseResource
+from .restful import RestfulApi
 from .errors import *
 
 
-class ToggleApi(BaseResource, Resource):
+class ToggleApi(RestfulApi):
 
     @login_required
     def post(self, **kwargs):

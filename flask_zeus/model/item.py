@@ -3,41 +3,23 @@ from sqlalchemy.dialects.postgres import UUID
 from flask_login import current_user
 from .base import (db)
 from .crud import (CRUDMixin)
-from ..decorators import classproperty
-import re
 
 
-class MarshalLabelMixin:
-
-    def __marshallable__(self):
-        data = self.__dict__
-        data.update({
-            'entry_type': getattr(self, 'cls_entry_type'),
-            'entry_id': getattr(self, 'id')
-        })
-        return data
-
-    @classproperty
-    def cls_entry_type(cls):
-        regex = re.compile(r'([A-Z])+')
-        return regex.sub(lambda x: '/{}'.format(x.group(0).lower()), cls.__name__).strip('/')
-
-
-class EntryMixin(CRUDMixin):
+class ItemMixin(CRUDMixin):
     # 属性名称
     # 例子: is_followed, is_praised
     attribute = None
 
     @declared_attr
-    def entry_type(self):
-        return db.Column('entry_type', db.String(255), index=True)
+    def item_type(self):
+        return db.Column('item_type', db.String(255), index=True)
 
     @declared_attr
-    def entry_id(self):
-        return db.Column('entry_id', UUID(as_uuid=True), index=True)
+    def item_id(self):
+        return db.Column('item_id', UUID(as_uuid=True), index=True)
 
     @classmethod
-    def for_entries(cls, items, attribute=None, child=None):
+    def for_list(cls, items, attribute=None, child=None):
         attribute = attribute or cls.attribute
 
         if not attribute:
@@ -55,12 +37,12 @@ class EntryMixin(CRUDMixin):
             query = getattr(cls, 'query')
 
             res = query\
-                .filter(cls.entry_id.in_(data_id))\
+                .filter(cls.item_id.in_(data_id))\
                 .filter_by(user_id=current_user.id)\
                 .all()
 
             for item in res:
-                results[item.entry_id] = True
+                results[item.item_id] = True
 
         for item in data:
             setattr(item, attribute, results.get(item.id))

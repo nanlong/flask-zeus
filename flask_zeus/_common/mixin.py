@@ -1,9 +1,6 @@
-from flask import (request, current_app)
-from PIL import Image
-from io import StringIO
+from flask import (request)
 from ..api.fields import (List, Nested)
 from ..api.errors import ZeusNotFound
-import qiniu
 
 
 class QueryMixin(object):
@@ -87,7 +84,7 @@ class QueryMixin(object):
 
         return stmt
 
-    def merge_data(self, data):
+    def merge_data(self, items):
         pass
 
     def get_item(self, **kwargs):
@@ -199,27 +196,3 @@ class FormMixin(object):
     def get_delete_form(self, **kwargs):
         if self.delete_form:
             return self.get_form(self.delete_form, **kwargs)
-
-
-class UploadMixin(object):
-
-    @staticmethod
-    def get_img_size(data):
-        try:
-            s = StringIO()
-            s.write(data)
-            img = Image.open(s)
-            width = img.width
-            height = img.height
-        except Exception as e:
-            width = 0
-            height = 0
-
-        return width, height
-
-    @staticmethod
-    def put_data(filename, data):
-        q = qiniu.Auth(current_app.config.get('QINIU_AK'), current_app.config.get('QINIU_SK'))
-        token = q.upload_token(current_app.config.get('QINIU_BUKET'))
-        ret, info = qiniu.put_data(token, filename, data)
-        return ret, info

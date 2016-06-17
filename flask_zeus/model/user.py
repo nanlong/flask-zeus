@@ -7,7 +7,7 @@ from .crud import CRUDMixin
 from uuid import UUID
 
 
-class AccountMixin(CRUDMixin):
+class UserMixin(CRUDMixin):
 
     @declared_attr
     def email(self):

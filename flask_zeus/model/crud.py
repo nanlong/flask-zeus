@@ -3,16 +3,12 @@ from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.dialects.postgres import UUID
 from datetime import datetime
 from .base import (db, BaseMixin)
+from .delete import DeletedMixin
+from ..decorators import classproperty
+import re
 
 
-class DeleteMixin(object):
-
-    @declared_attr
-    def deleted(self):
-        return db.Column('deleted', db.Boolean, default=False, index=True, doc='是否删除')
-
-
-class CRUDMixin(BaseMixin, DeleteMixin):
+class CRUDMixin(BaseMixin, DeletedMixin):
     """ Basic CRUD mixin
     """
 
@@ -71,4 +67,17 @@ class CRUDMixin(BaseMixin, DeleteMixin):
 
     def increase(self, field, step=1):
         self.update(**{field: getattr(self, field) + step})
+
+    def __marshallable__(self):
+        data = self.__dict__
+        data.update({
+            'item_type': getattr(self, 'item_type'),
+            'item_id': getattr(self, 'id')
+        })
+        return data
+
+    @classproperty
+    def item_type(cls):
+        regex = re.compile(r'([A-Z])+')
+        return regex.sub(lambda x: '/{}'.format(x.group(0).lower()), cls.__name__).strip('/')
 

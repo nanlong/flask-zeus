@@ -1,6 +1,6 @@
 from flask import (request, url_for, render_template)
 from flask.views import View
-from ..common.mixin import QueryMixin, ContextMixin
+from .._common.mixin import QueryMixin, ContextMixin
 import types
 
 
