@@ -1,7 +1,7 @@
 from flask_restful import (Resource, marshal)
 from flask_login import (login_required, current_user)
 from .base import BaseResource
-from .errors import *
+from .exceptions import *
 
 
 class RestfulApi(BaseResource, Resource):
@@ -59,7 +59,7 @@ class RestfulApi(BaseResource, Resource):
         :return: dict
         """
         if not self.can_read:
-            raise ZeusMethodNotAllowed
+            raise APIMethodNotAllowed
 
         if kwargs.get('id'):
             item = self.get_item(**kwargs)
@@ -75,7 +75,7 @@ class RestfulApi(BaseResource, Resource):
             items = self.get_items(**kwargs)
 
             if not self.can_empty and not items:
-                raise ZeusNotFound
+                raise APINotFound
 
             return marshal(items, self.get_model_fields())
 
@@ -86,15 +86,15 @@ class RestfulApi(BaseResource, Resource):
         :return: dict
         """
         if not self.can_create:
-            raise ZeusMethodNotAllowed
+            raise APIMethodNotAllowed
 
         if not self.model.has_property('user_id'):
-            raise ZeusMethodNotAllowed
+            raise APIMethodNotAllowed
 
         form = self.get_create_form(**kwargs)
 
         if not form.validate_on_submit():
-            raise ZeusBadRequest(details=form.errors)
+            raise APIBadRequest(details=form.errors)
 
         model = self.get_model()
         item = model()
@@ -116,20 +116,20 @@ class RestfulApi(BaseResource, Resource):
         :return: dict
         """
         if not self.can_update:
-            raise ZeusMethodNotAllowed
+            raise APIMethodNotAllowed
 
         if not kwargs or not self.model.has_property('user_id'):
-            raise ZeusMethodNotAllowed
+            raise APIMethodNotAllowed
 
         item = self.get_item(**kwargs)
 
         if item.user_id != current_user.id:
-            raise ZeusForbidden
+            raise APIForbidden
 
         form = self.get_update_form(**kwargs)
 
         if not form.validate_on_submit():
-            raise ZeusBadRequest(details=form.errors)
+            raise APIBadRequest(details=form.errors)
 
         for k, v in form.data.items():
             setattr(item, k, v)
@@ -145,20 +145,20 @@ class RestfulApi(BaseResource, Resource):
         :return: None
         """
         if not self.can_delete:
-            raise ZeusMethodNotAllowed
+            raise APIMethodNotAllowed
 
         if not kwargs or not self.model.has_property('user_id'):
-            raise ZeusMethodNotAllowed
+            raise APIMethodNotAllowed
 
         form = self.get_delete_form(**kwargs)
 
         if form and not form.validate():
-            raise ZeusBadRequest(details=form.errors)
+            raise APIBadRequest(details=form.errors)
 
         item = self.get_item(**kwargs)
 
         if item.user_id != current_user.id:
-            raise ZeusForbidden
+            raise APIForbidden
 
         item.delete()
 

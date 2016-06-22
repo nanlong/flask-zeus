@@ -3,7 +3,7 @@ from flask_restful import HTTPException
 from collections import OrderedDict
 
 
-class ZeusHTTPException(HTTPException):
+class APIException(HTTPException):
     """
     code http状态码
     description 错误描述
@@ -21,7 +21,7 @@ class ZeusHTTPException(HTTPException):
         self.message = description or self.description
         self.error_code = error_code
         self.details = details or {}
-        super(ZeusHTTPException, self).__init__(description, response)
+        super(APIException, self).__init__(description, response)
 
     def as_dict(self):
         """
@@ -42,26 +42,33 @@ class ZeusHTTPException(HTTPException):
         return self.as_dict()
 
 
-class ZeusBadRequest(BadRequest, ZeusHTTPException):
-    """ 400 """
+class APIBadRequest(BadRequest, APIException):
     pass
 
 
-class ZeusUnauthorized(Unauthorized, ZeusHTTPException):
-    """ 401 """
+class APIUnauthorized(Unauthorized, APIException):
     pass
 
 
-class ZeusForbidden(Forbidden, ZeusHTTPException):
-    """ 403 """
+class APIForbidden(Forbidden, APIException):
     pass
 
 
-class ZeusNotFound(NotFound, ZeusHTTPException):
-    """ 404 """
+class APINotFound(NotFound, APIException):
     pass
 
 
-class ZeusMethodNotAllowed(MethodNotAllowed, ZeusHTTPException):
-    """ 405 """
+class APIMethodNotAllowed(MethodNotAllowed, APIException):
+    pass
+
+
+class APINotAcceptable(NotAcceptable, APIException):
+    pass
+
+
+class APIUnsupportedMediaType(UnsupportedMediaType, APIException):
+    pass
+
+
+class APITooManyRequests(TooManyRequests, APIException):
     pass

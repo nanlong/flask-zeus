@@ -1,6 +1,6 @@
 from flask import (request)
 from ..api.fields import (List, Nested)
-from ..api.errors import ZeusNotFound
+from ..api.exceptions import APINotFound
 
 
 class QueryMixin(object):
@@ -91,7 +91,7 @@ class QueryMixin(object):
         stmt = self.get_query(**kwargs)
         item = stmt.first()
         if not item:
-            raise ZeusNotFound
+            raise APINotFound
         return item
 
     def get_pagination(self, **kwargs):
